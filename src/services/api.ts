@@ -299,7 +299,14 @@ function buildPubliciteFormData(payload: PubliciteDraft) {
   if (payload.categorie) appendValue(formData, 'categorie', payload.categorie)
   appendValue(formData, 'lien_action', payload.lien_action || '#/boutiques')
   appendValue(formData, 'quartier_cible', payload.quartier_cible)
-  appendValue(formData, 'banniere', payload.banniere)
+  if (payload.banniere) appendValue(formData, 'banniere', payload.banniere)
+  if (payload.thumbnail_index !== undefined) appendValue(formData, 'thumbnail_index', String(payload.thumbnail_index))
+
+  if (payload.images && payload.images.length > 0) {
+    payload.images.forEach((img) => {
+      formData.append('images[]', img)
+    })
+  }
 
   return formData
 }

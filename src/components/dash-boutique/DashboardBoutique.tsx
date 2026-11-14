@@ -50,7 +50,7 @@ export const DashboardBoutique: React.FC<DashboardBoutiqueProps> = ({
                                     className="flex h-9 items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700"
                                 >
                                     <UiIcon name="plus" className="h-3.5 w-3.5" />
-                                    Nouvelle campagne
+                                    Publier un article
                                 </a>
                             </>
                         }
@@ -114,11 +114,11 @@ export const DashboardBoutique: React.FC<DashboardBoutiqueProps> = ({
                             ) : (
                                 <EmptyState
                                     icon={<UiIcon name="store" className="h-5 w-5" />}
-                                    title="Aucune campagne pour le moment"
-                                    description="Créez une bannière pour présenter vos produits aux étudiants et aux riverains des campus."
+                                    title="Aucun article pour le moment"
+                                    description="Publiez vos articles avec photos pour présenter vos produits aux étudiants et aux riverains des campus."
                                     action={
                                         <a href="#/publier" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 text-xs font-semibold text-white transition hover:bg-blue-700">
-                                            <UiIcon name="plus" className="h-3.5 w-3.5" /> Créer une campagne
+                                            <UiIcon name="plus" className="h-3.5 w-3.5" /> Publier un article
                                         </a>
                                     }
                                 />

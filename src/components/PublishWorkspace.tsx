@@ -7,6 +7,8 @@ import {
   Camera,
   Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   GripVertical,
   Lock,
@@ -35,7 +37,7 @@ import { formatPrice, formatRoomType } from '../utils/format'
 import { PageForfaits, isKkiapayReady, requestKkiapayPayment } from './PageForfaits'
 import { WidgetPortefeuille } from './WidgetPortefeuille'
 import type { ToastDraft } from './ToastViewport'
-import { compressImage, compressImages } from '../utils/imageCompressor'
+import { compressImages } from '../utils/imageCompressor'
 import { usePlatformSettings } from '../hooks/usePlatformSettings'
 
 interface PublishWorkspaceProps {
@@ -61,7 +63,7 @@ const BINOME_STEPS = [
 
 const PUBLICITE_STEPS = [
   { id: 'infos', label: 'Informations' },
-  { id: 'medias', label: 'Bannière' },
+  { id: 'medias', label: "Images de l'article" },
   { id: 'recap', label: 'Récapitulatif' },
 ] as const
 
@@ -96,7 +98,11 @@ const ELECTRICITE_OPTIONS = [
   { value: 'SBEE_CONVENTIONNEL' as const, label: 'SBEE (conventionnel)' },
 ]
 
-type PubliciteFormState = Omit<PubliciteDraft, 'banniere'> & { banniere: File | null }
+type PubliciteFormState = Omit<PubliciteDraft, 'banniere' | 'images' | 'thumbnail_index'> & {
+  banniere: File | null
+  images: File[]
+  thumbnailIndex: number
+}
 
 function SecteurFields({
   form,
@@ -238,6 +244,8 @@ function buildInitialPubliciteForm(): PubliciteFormState {
     lien_action: '',
     quartier_cible: '',
     banniere: null,
+    images: [],
+    thumbnailIndex: 0,
   }
 }
 
@@ -258,7 +266,9 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
   )
   const [publiciteForm, setPubliciteForm] = useState<PubliciteFormState>(buildInitialPubliciteForm)
   const [mediaPreviews, setMediaPreviews] = useState<{ file: File; url: string }[]>([])
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+  const [publicitePreviews, setPublicitePreviews] = useState<{ file: File; url: string }[]>([])
+  const [draggedBoutiqueIndex, setDraggedBoutiqueIndex] = useState<number | null>(null)
+  const [dragOverBoutiqueIndex, setDragOverBoutiqueIndex] = useState<number | null>(null)
 
   const [stepIndex, setStepIndex] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -335,16 +345,17 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
   }
 
 
-  /* Aperçu bannière boutique */
+  /* Aperçus photos article boutique */
   useEffect(() => {
-    if (!publiciteForm.banniere) {
-      setBannerPreview(null)
-      return
+    const urls = (publiciteForm.images ?? []).map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }))
+    setPublicitePreviews(urls)
+    return () => {
+      urls.forEach((item) => URL.revokeObjectURL(item.url))
     }
-    const url = URL.createObjectURL(publiciteForm.banniere)
-    setBannerPreview(url)
-    return () => URL.revokeObjectURL(url)
-  }, [publiciteForm.banniere])
+  }, [publiciteForm.images])
 
   /* Chargement du solde de crédits (démarcheur) sur la page récap */
   useEffect(() => {
@@ -418,16 +429,84 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
     onToast({ tone: 'info', title: 'Photo principale', message: 'Cette photo a été définie comme photo principale.' })
   }
 
+  /* ─── Gestion des images pour Boutique ───────────────── */
+
+  async function handlePubliciteImagesSelected(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files
+    if (!files?.length) return
+    const compressed = await compressImages(Array.from(files))
+    const updatedImages = [...(publiciteForm.images ?? []), ...compressed]
+    setP({
+      images: updatedImages,
+      banniere: updatedImages[publiciteForm.thumbnailIndex] ?? updatedImages[0] ?? null,
+    })
+    event.target.value = ''
+  }
+
+  function removePubliciteImage(indexToRemove: number) {
+    const nextImages = (publiciteForm.images ?? []).filter((_, index) => index !== indexToRemove)
+    let nextThumb = publiciteForm.thumbnailIndex
+    if (indexToRemove === publiciteForm.thumbnailIndex) {
+      nextThumb = 0
+    } else if (indexToRemove < publiciteForm.thumbnailIndex) {
+      nextThumb = Math.max(0, publiciteForm.thumbnailIndex - 1)
+    }
+    if (nextThumb >= nextImages.length) {
+      nextThumb = Math.max(0, nextImages.length - 1)
+    }
+    setP({
+      images: nextImages,
+      thumbnailIndex: nextThumb,
+      banniere: nextImages[nextThumb] ?? null,
+    })
+  }
+
+  function setPubliciteThumbnail(index: number) {
+    if (index < 0 || index >= publiciteForm.images.length) return
+    setP({
+      thumbnailIndex: index,
+      banniere: publiciteForm.images[index],
+    })
+    onToast({
+      tone: 'info',
+      title: 'Miniature définie',
+      message: 'Cette photo servira de miniature principale pour vos publicités et vitrines.',
+    })
+  }
+
+  function reorderPubliciteImages(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return
+    const list = [...(publiciteForm.images ?? [])]
+    if (fromIndex < 0 || fromIndex >= list.length || toIndex < 0 || toIndex >= list.length) return
+    const [moved] = list.splice(fromIndex, 1)
+    list.splice(toIndex, 0, moved)
+
+    let newThumbIndex = publiciteForm.thumbnailIndex
+    if (publiciteForm.thumbnailIndex === fromIndex) {
+      newThumbIndex = toIndex
+    } else if (fromIndex < publiciteForm.thumbnailIndex && toIndex >= publiciteForm.thumbnailIndex) {
+      newThumbIndex--
+    } else if (fromIndex > publiciteForm.thumbnailIndex && toIndex <= publiciteForm.thumbnailIndex) {
+      newThumbIndex++
+    }
+
+    setP({
+      images: list,
+      thumbnailIndex: newThumbIndex,
+      banniere: list[newThumbIndex] ?? null,
+    })
+  }
+
   /* ─── Validation par étape ─────────────────────────── */
 
   function validateStep(): boolean {
     if (isBoutique) {
       if (currentStep?.id === 'infos' && !publiciteForm.titre_promo.trim()) {
-        onToast({ tone: 'error', title: 'Titre requis', message: 'Indiquez un titre pour votre campagne publicitaire.' })
+        onToast({ tone: 'error', title: 'Titre requis', message: "Indiquez un nom ou titre pour votre article." })
         return false
       }
-      if (currentStep?.id === 'medias' && !publiciteForm.banniere) {
-        onToast({ tone: 'error', title: 'Bannière requise', message: 'Veuillez téléverser une image de bannière.' })
+      if (currentStep?.id === 'medias' && (!publiciteForm.images || publiciteForm.images.length === 0)) {
+        onToast({ tone: 'error', title: 'Photos requises', message: "Veuillez téléverser au moins une photo pour votre article." })
         return false
       }
       return true
@@ -581,24 +660,32 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
   }
 
   async function handlePubliciteSubmit() {
-    if (!publiciteForm.banniere) {
-      onToast({ tone: 'error', title: 'Bannière requise', message: 'Veuillez téléverser une image de bannière.' })
+    if (!publiciteForm.images || publiciteForm.images.length === 0) {
+      onToast({ tone: 'error', title: 'Photos requises', message: "Veuillez téléverser au moins une photo pour votre article." })
       return
     }
+    const safeThumbIndex = Math.min(publiciteForm.thumbnailIndex, publiciteForm.images.length - 1)
+    const thumbnailFile = publiciteForm.images[safeThumbIndex] || publiciteForm.images[0]
+
     setIsSubmitting(true)
     try {
-      await createPublicite(session.token, { ...publiciteForm, banniere: publiciteForm.banniere })
+      await createPublicite(session.token, {
+        ...publiciteForm,
+        banniere: thumbnailFile,
+        images: publiciteForm.images,
+        thumbnail_index: safeThumbIndex,
+      })
       onToast({
         tone: 'success',
-        title: 'Campagne lancée !',
-        message: 'Votre bannière publicitaire est active et diffusée sur la plateforme.',
+        title: 'Article publié !',
+        message: 'Votre article est maintenant en ligne avec sa miniature et sa galerie de photos.',
       })
       window.location.hash = '#' + getDashboardPath(session.user.role)
     } catch (err) {
       onToast({
         tone: 'error',
-        title: 'Erreur',
-        message: err instanceof Error ? err.message : 'Erreur pendant la création de la bannière.',
+        title: 'Erreur de publication',
+        message: err instanceof Error ? err.message : "Erreur pendant la publication de l'article.",
       })
     } finally {
       setIsSubmitting(false)
@@ -688,14 +775,14 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
       <div className="mb-4">
         <h1 className="h3 fw-bold mb-2">
           {isBoutique
-            ? 'Créer une campagne publicitaire'
+            ? 'Publier un article boutique'
             : isDemarcheur
               ? 'Publier une chambre vide'
               : 'Déposer une annonce de colocation'}
         </h1>
         <p className="mb-0" style={{ color: 'var(--muted)', maxWidth: 640 }}>
           {isBoutique
-            ? "Mettez en avant vos services ou produits auprès des milliers d'étudiants et riverains des campus universitaires du Bénin."
+            ? "Mettez en avant vos produits auprès des milliers d'étudiants et riverains des campus universitaires du Bénin."
             : 'Renseignez des détails précis et des photos nettes pour trouver un locataire sérieux en quelques heures.'}
         </p>
       </div>
@@ -1285,15 +1372,15 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
         {currentStep?.id === 'medias' && isBoutique && (
           <>
             <div className="publish-form__header">
-              <h2 className="publish-form__section-title">Bannière publicitaire</h2>
+              <h2 className="publish-form__section-title">Images de l'article</h2>
               <p className="publish-form__intro">
-                Téléversez une bannière visuelle attractive pour présenter votre offre aux étudiants.
+                Téléversez une ou plusieurs photos de votre article. Vous pouvez déplacer les images pour organiser leur ordre et choisir la photo qui servira de miniature pour la publicité sur la plateforme.
               </p>
             </div>
 
             <div className="publish-form__section">
               <label className="field">
-                <span>Image de bannière</span>
+                <span>Ajouter des photos de l'article *</span>
                 <label
                   htmlFor={bannerInputId}
                   className="d-flex flex-column align-items-center justify-content-center gap-2 text-center"
@@ -1307,27 +1394,265 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
                 >
                   <Camera size={28} style={{ color: 'var(--primary)' }} />
                   <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)' }}>
-                    Sélectionnez une bannière
+                    Sélectionnez les images de l'article
                   </span>
-                  <span style={{ fontSize: '0.78rem' }}>JPG, PNG ou WEBP</span>
+                  <span style={{ fontSize: '0.78rem' }}>JPG, PNG ou WEBP — Vous pouvez sélectionner plusieurs fichiers</span>
                   <input
                     id={bannerInputId}
                     type="file"
+                    multiple
                     accept="image/jpeg,image/png,image/webp"
                     style={{ display: 'none' }}
-                    onChange={async (event) => {
-                      const raw = event.target.files?.[0] ?? null
-                      const file = raw ? await compressImage(raw) : null
-                      setP({ banniere: file })
-                    }}
+                    onChange={handlePubliciteImagesSelected}
                   />
                 </label>
               </label>
 
-              {bannerPreview && (
-                <div className="mt-3" style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                  <img src={bannerPreview} alt="Aperçu de la bannière" style={{ width: '100%', maxHeight: 260, objectFit: 'cover', display: 'block' }} />
-                </div>
+              {publicitePreviews.length > 0 && (
+                <>
+                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 mb-3">
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)' }}>
+                      Photos ajoutées ({publicitePreviews.length})
+                    </span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
+                      💡 Glissez-déposez ou utilisez les flèches pour changer l'ordre. L'image <strong>Miniature</strong> est diffusée sur les pubs.
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
+                      gap: 12,
+                    }}
+                  >
+                    {publicitePreviews.map((preview, index) => {
+                      const isMiniature = index === publiciteForm.thumbnailIndex
+                      const isDragging = draggedBoutiqueIndex === index
+                      const isDragOver = dragOverBoutiqueIndex === index
+
+                      return (
+                        <div
+                          key={`${preview.file.name}-${index}`}
+                          draggable
+                          onDragStart={() => setDraggedBoutiqueIndex(index)}
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            if (dragOverBoutiqueIndex !== index) {
+                              setDragOverBoutiqueIndex(index)
+                            }
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverBoutiqueIndex === index) {
+                              setDragOverBoutiqueIndex(null)
+                            }
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault()
+                            if (draggedBoutiqueIndex !== null && draggedBoutiqueIndex !== index) {
+                              reorderPubliciteImages(draggedBoutiqueIndex, index)
+                            }
+                            setDraggedBoutiqueIndex(null)
+                            setDragOverBoutiqueIndex(null)
+                          }}
+                          onDragEnd={() => {
+                            setDraggedBoutiqueIndex(null)
+                            setDragOverBoutiqueIndex(null)
+                          }}
+                        >
+                          <div
+                            className="position-relative"
+                            style={{
+                              borderRadius: 14,
+                              overflow: 'hidden',
+                              border: isDragOver
+                                ? '2px solid #2563EB'
+                                : isMiniature
+                                  ? '2px solid #16A34A'
+                                  : '1px solid var(--border)',
+                              boxShadow: isDragOver
+                                ? '0 0 14px rgba(37,99,235,0.35)'
+                                : isMiniature
+                                  ? '0 0 10px rgba(22,163,74,0.25)'
+                                  : undefined,
+                              opacity: isDragging ? 0.4 : 1,
+                              transform: isDragging ? 'scale(0.96)' : undefined,
+                              transition: 'all 0.18s ease',
+                              cursor: isDragging ? 'grabbing' : 'grab',
+                            }}
+                          >
+                            <img
+                              src={preview.url}
+                              alt={`Photo ${index + 1}`}
+                              style={{
+                                width: '100%',
+                                height: 135,
+                                objectFit: 'cover',
+                                display: 'block',
+                                pointerEvents: 'none',
+                              }}
+                            />
+
+                            {/* Poignée de déplacement */}
+                            <span
+                              style={{
+                                position: 'absolute',
+                                top: 6,
+                                left: 6,
+                                width: 24,
+                                height: 24,
+                                borderRadius: '50%',
+                                background: 'rgba(15,23,42,0.65)',
+                                color: '#fff',
+                                display: 'grid',
+                                placeItems: 'center',
+                                pointerEvents: 'none',
+                              }}
+                              title="Glisser pour déplacer"
+                            >
+                              <GripVertical size={13} />
+                            </span>
+
+                            {/* Boutons d'ordonnancement gauche/droite pour mobile & clics */}
+                            <div style={{ position: 'absolute', top: 6, left: 34, display: 'flex', gap: 4 }}>
+                              {index > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    reorderPubliciteImages(index, index - 1)
+                                  }}
+                                  title="Déplacer vers la gauche"
+                                  style={{
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: 'rgba(15,23,42,0.7)',
+                                    color: '#fff',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <ChevronLeft size={13} />
+                                </button>
+                              )}
+                              {index < publicitePreviews.length - 1 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    reorderPubliciteImages(index, index + 1)
+                                  }}
+                                  title="Déplacer vers la droite"
+                                  style={{
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: 'rgba(15,23,42,0.7)',
+                                    color: '#fff',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <ChevronRight size={13} />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Bouton de suppression */}
+                            <button
+                              type="button"
+                              className="position-absolute d-inline-grid"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                removePubliciteImage(index)
+                              }}
+                              aria-label={`Supprimer l'image ${index + 1}`}
+                              style={{
+                                top: 6,
+                                right: 6,
+                                width: 24,
+                                height: 24,
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: 'rgba(239,68,68,0.85)',
+                                color: '#fff',
+                                placeItems: 'center',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+
+                            {/* Badge miniature ou bouton pour la définir */}
+                            {isMiniature ? (
+                              <span
+                                className="position-absolute"
+                                style={{
+                                  bottom: 6,
+                                  left: 6,
+                                  background: '#15803D',
+                                  color: '#fff',
+                                  borderRadius: 8,
+                                  padding: '3px 8px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                                }}
+                              >
+                                <Star size={11} fill="currentColor" />
+                                Miniature (Pubs & Index)
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setPubliciteThumbnail(index)
+                                }}
+                                title="Choisir cette photo comme miniature affichée sur l'index"
+                                style={{
+                                  position: 'absolute',
+                                  bottom: 6,
+                                  left: 6,
+                                  background: 'rgba(15,23,42,0.75)',
+                                  color: '#fff',
+                                  border: '1px solid rgba(255,255,255,0.25)',
+                                  borderRadius: 8,
+                                  padding: '3px 8px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  cursor: 'pointer',
+                                  backdropFilter: 'blur(4px)',
+                                  transition: 'background 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = '#15803D'
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'rgba(15,23,42,0.75)'
+                                }}
+                              >
+                                <Star size={11} />
+                                Choisir comme miniature
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
               )}
             </div>
           </>
@@ -1591,9 +1916,62 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
                     <span>🔗 Lien : <a href={publiciteForm.lien_action} target="_blank" rel="noreferrer">{publiciteForm.lien_action}</a></span>
                   )}
                 </div>
-                {bannerPreview && (
-                  <div className="mt-3" style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                    <img src={bannerPreview} alt="Bannière retenue" style={{ width: '100%', maxHeight: 260, objectFit: 'cover', display: 'block' }} />
+                {publicitePreviews.length > 0 && (
+                  <div className="mt-4">
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      <span className="small text-muted font-bold">
+                        Photos de l'article ({publicitePreviews.length})
+                      </span>
+                      <span
+                        className="badge bg-success-subtle text-success small"
+                        style={{ fontSize: '0.75rem', fontWeight: 700 }}
+                      >
+                        ⭐ Miniature : Photo #{publiciteForm.thumbnailIndex + 1}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
+                        gap: 8,
+                      }}
+                    >
+                      {publicitePreviews.map((p, idx) => (
+                        <div
+                          key={`${p.file.name}-${idx}`}
+                          className="position-relative"
+                          style={{
+                            borderRadius: 10,
+                            overflow: 'hidden',
+                            border: idx === publiciteForm.thumbnailIndex ? '2px solid #16A34A' : '1px solid var(--border)',
+                          }}
+                        >
+                          <img
+                            src={p.url}
+                            alt=""
+                            style={{ width: '100%', height: 75, objectFit: 'cover', display: 'block' }}
+                          />
+                          {idx === publiciteForm.thumbnailIndex && (
+                            <span
+                              style={{
+                                position: 'absolute',
+                                bottom: 3,
+                                left: 3,
+                                background: '#16A34A',
+                                color: '#fff',
+                                fontSize: '8px',
+                                fontWeight: 800,
+                                padding: '1px 5px',
+                                borderRadius: 4,
+                              }}
+                            >
+                              Miniature
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1628,7 +2006,7 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
                 {isSubmitting
                   ? 'Publication…'
                   : isBoutique
-                    ? 'Lancer la campagne'
+                    ? "Publier l'article"
                     : portefeuille && portefeuille.credits_restants === 0
                       ? 'Quota épuisé'
                       : "Publier l'annonce"}

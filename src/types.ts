@@ -357,7 +357,9 @@ export interface PubliciteDraft {
   categorie?: string
   lien_action?: string
   quartier_cible?: string
-  banniere: File
+  banniere?: File | null
+  images?: File[]
+  thumbnail_index?: number
 }
 
 export interface AuthUser {
@@ -392,6 +394,7 @@ export interface PubliciteBoutique {
   description?: string | null
   categorie?: string | null
   url_image_banniere: string
+  images?: string[]
   lien_action: string
   quartier_cible: string | null
   vues_count: number

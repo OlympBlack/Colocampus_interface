@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { UiIcon } from '../components/UiIcons'
 import { fetchPubliciteBoutique, fetchPublicitesBoutiques, contactPubliciteBoutique } from '../services/api'
 import type { AuthSession, PubliciteBoutique } from '../types'
@@ -145,6 +145,16 @@ export function MarketplaceProductPage({
       ? `${Number(product.prix).toLocaleString('fr-FR')} FCFA`
       : 'Sur devis / Promo'
 
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const productImages = useMemo(() => {
+    if (product?.images && product.images.length > 0) {
+      return product.images
+    }
+    return product?.url_image_banniere ? [product.url_image_banniere] : []
+  }, [product])
+
+  const activeImage = productImages[selectedImageIndex] || product?.url_image_banniere
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" }}>
       {/* ── Navigation Header ── */}
@@ -172,7 +182,7 @@ export function MarketplaceProductPage({
           <div className="w-full md:w-1/2 shrink-0">
             <div className="relative aspect-[4/3] md:aspect-square bg-slate-100 rounded-3xl overflow-hidden border border-slate-200/80 shadow-xs group">
               <img
-                src={product.url_image_banniere}
+                src={activeImage}
                 alt={product.titre_promo}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
               />
@@ -195,6 +205,31 @@ export function MarketplaceProductPage({
                 </div>
               )}
             </div>
+
+            {/* Miniatures de la galerie si plusieurs images */}
+            {productImages.length > 1 && (
+              <div className="flex gap-2.5 mt-3 overflow-x-auto pb-1 scrollbar-thin">
+                {productImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`relative aspect-square w-16 sm:w-20 rounded-2xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                      selectedImageIndex === idx
+                        ? 'border-blue-600 ring-2 ring-blue-600/30'
+                        : 'border-slate-200 hover:border-slate-400 opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    {idx === 0 && (
+                      <span className="absolute bottom-1 left-1 bg-black/70 text-[9px] text-white px-1 py-0.5 rounded font-medium">
+                        Miniature
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Fiche Boutique Partenaire sous l'image */}
             <div className="mt-6 p-5 bg-white rounded-3xl border border-slate-200/80 shadow-xs">
