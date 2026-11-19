@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://coletubenin.lavoixdabouloussi.org/sitemap.xml
+Sitemap: https://colocampus.bj/sitemap.xml
