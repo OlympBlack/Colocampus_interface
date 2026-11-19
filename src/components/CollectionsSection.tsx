@@ -126,8 +126,9 @@ export function CollectionsSection({ title, subtitle }: { title?: ReactNode; sub
           const count = countsBySlug[col.slug] ?? col.fallbackCount ?? 0
 
           return (
-            <article
+            <a
               key={col.id}
+              href={`#/collections/${col.slug}`}
               onClick={() => handleSelectCollection(col)}
               className="collection-card"
             >
@@ -147,7 +148,7 @@ export function CollectionsSection({ title, subtitle }: { title?: ReactNode; sub
                   {count} {count > 1 ? 'Propriétés' : 'Propriété'}
                 </p>
               </div>
-            </article>
+            </a>
           )
         })}
       </div>

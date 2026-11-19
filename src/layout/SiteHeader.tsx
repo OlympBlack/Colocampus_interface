@@ -439,8 +439,8 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
           <div className="d-flex align-items-center justify-content-between w-100 flex-wrap">
             <ul className="left-info d-flex flex-wrap align-items-center m-0 p-0" style={{ gap: '18px', listStyle: 'none' }}>
               <li>
-                <a href={`mailto:${settings?.email_contact || 'contact@coletubenin.lavoixdabouloussi.org'}`}>
-                  <i className="fa fa-envelope"></i> {settings?.email_contact || 'contact@coletubenin.lavoixdabouloussi.org'}
+                <a href={`mailto:${settings?.email_contact || 'contact@colocampus.bj'}`}>
+                  <i className="fa fa-envelope"></i> {settings?.email_contact || 'contact@colocampus.bj'}
                 </a>
               </li>
               <li>
@@ -477,7 +477,7 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
 
       <header
         ref={headerRef}
-        className={`${hasBackground ? 'background-header' : ''} ${!isDarkHeroPage ? 'header-solid-page' : ''} ${isMenuOpen ? 'mobile-menu-active' : ''}`.trim()}
+        className={`${hasBackground ? 'background-header' : ''} ${!isDarkHeroPage ? 'header-solid-page' : ''} ${route.name === 'search' ? 'header-search-page' : ''} ${isMenuOpen ? 'mobile-menu-active' : ''}`.trim()}
       >
         <nav className="navbar navbar-expand-lg">
           <div className="colcampus-navbar-container">

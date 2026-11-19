@@ -19,6 +19,8 @@ export type AppRoute =
   | { name: 'pro-register'; path: '/inscription-pro' }
   | { name: 'verify'; path: '/verification-compte' }
   | { name: 'login'; path: '/connexion' }
+  | { name: 'forgot-password'; path: '/mot-de-passe-oublie' }
+  | { name: 'reset-password'; path: '/reinitialiser-mot-de-passe'; query?: string }
   | { name: 'publish'; path: '/publier' }
   | { name: 'dashboard'; path: string; role?: UserRole; query?: string; tab?: string }
   | { name: 'profile'; path: string }
@@ -29,6 +31,7 @@ export type AppRoute =
   | { name: 'blog'; path: '/blog' }
   | { name: 'blogPost'; path: string; slug: string }
   | { name: 'legal'; path: string; page: LegalPageSlug }
+  | { name: 'notFound'; path: string }
 
 function isUserRole(value: string | undefined): value is UserRole {
   return value === 'etudiant' || value === 'demarcheur' || value === 'boutique' || value === 'admin'
@@ -71,8 +74,12 @@ function parseRoute(path: string): AppRoute {
   if (normalized === '/inscription-pro') return { name: 'pro-register', path: normalized }
   if (normalized === '/verification-compte') return { name: 'verify', path: normalized }
   if (normalized === '/connexion') return { name: 'login', path: normalized }
+  if (normalized === '/mot-de-passe-oublie') return { name: 'forgot-password', path: normalized }
+  if (normalized === '/reinitialiser-mot-de-passe') {
+    return { name: 'reset-password', path: normalized, query: rawQuery }
+  }
   if (normalized === '/publier') return { name: 'publish', path: normalized }
-  if (normalized === '/profil' || normalized === '/profile') return { name: 'profile', path: normalized }
+  if (normalized === '/profil' || normalized === '/profile') return { name: 'profile', path: '/profile' }
   if (normalized === '/forfaits-publications') return { name: 'forfaits', path: normalized }
   if (normalized === '/contact' || normalized === '/support' || normalized === '/nous-contacter') {
     return { name: 'contact', path: '/contact' }
@@ -143,7 +150,7 @@ function parseRoute(path: string): AppRoute {
     return { name: 'dashboard', path: normalized, role, query: rawQuery, tab }
   }
 
-  return { name: 'home', path: '/' }
+  return { name: 'notFound', path: normalized }
 }
 
 export function useHashRoute() {

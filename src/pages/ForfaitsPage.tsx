@@ -4,10 +4,10 @@ import type { ToastDraft } from '../components/ToastViewport'
 import type { AuthSession } from '../types'
 
 interface ForfaitsPageProps {
-  session: AuthSession
+  session: AuthSession | null
   onToast: (toast: ToastDraft) => void
   onRefresh?: () => void
-  onSuccess?: (res: any) => void
+  onSuccess?: (res: unknown) => void
 }
 
 export function ForfaitsPage({ session, onToast, onRefresh, onSuccess }: ForfaitsPageProps) {

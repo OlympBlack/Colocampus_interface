@@ -12,6 +12,14 @@ export const PwaInstallPrompt: React.FC = () => {
     setShowIosGuide,
   } = usePwaInstall()
 
+  React.useEffect(() => {
+    if (isInstalled || !isInstallable || showIosGuide) return
+    document.body.style.paddingBottom = '96px'
+    return () => {
+      document.body.style.paddingBottom = ''
+    }
+  }, [isInstalled, isInstallable, showIosGuide])
+
   if (isInstalled) return null
 
   return (

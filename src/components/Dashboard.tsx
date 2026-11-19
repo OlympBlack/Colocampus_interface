@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Trash2, Star, UploadCloud, Video } from 'lucide-react'
 import { compressImages } from '../utils/imageCompressor'
 import {
+  API_BASE_URL,
   deleteAnnouncement,
   fetchDashboard,
   updateAnnouncement,
@@ -92,6 +93,7 @@ function getUserDisplayName(user: AuthUser): string {
 
 function getAvatarUrl(url?: string | null): string | null {
   if (!url) return null
+  const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '')
   if (url.startsWith('http://') || url.startsWith('https://')) {
     try {
       const u = new URL(url)
@@ -99,7 +101,10 @@ function getAvatarUrl(url?: string | null): string | null {
       const isLocalApi = u.hostname === 'localhost' || u.hostname === '127.0.0.1'
       const isLocalHost = host === 'localhost' || host === '127.0.0.1'
       if (isLocalApi && !isLocalHost) {
-        u.hostname = host
+        return `${apiOrigin}${u.pathname}${u.search}`
+      }
+      if (u.hostname.includes('colcampusapi.lavoixdabouloussi.org')) {
+        u.hostname = 'coletubeninapi.lavoixdabouloussi.org'
         return u.toString()
       }
     } catch {
@@ -107,8 +112,7 @@ function getAvatarUrl(url?: string | null): string | null {
     }
     return url
   }
-  const apiPort = (import.meta.env.VITE_API_PORT as string | undefined) ?? '8000'
-  return `${window.location.protocol}//${window.location.hostname}:${apiPort}/${url.replace(/^\//, '')}`
+  return `${apiOrigin}/${url.replace(/^\//, '')}`
 }
 
 function computeProfileProgress(user: AuthUser): number {

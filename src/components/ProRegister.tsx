@@ -23,6 +23,7 @@ export function ProRegisterFlow({
     email: '',
     password: '',
     telephone: '',
+    accepte_cgu: false,
     photo_profil: new File([], ''),
     ifu: '',
     nom_agence: '',
@@ -43,6 +44,11 @@ export function ProRegisterFlow({
     setForm((current) => ({ ...current, [name]: value }))
   }
 
+  function onCheckboxChange(event: ChangeEvent<HTMLInputElement>) {
+    const { name, checked } = event.target
+    setForm((current) => ({ ...current, [name]: checked }))
+  }
+
   function onFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
     const { name } = event.target
@@ -60,6 +66,13 @@ export function ProRegisterFlow({
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!choice) return
+
+    if (!form.accepte_cgu) {
+      const message = "Vous devez accepter les conditions d'utilisation pour créer un compte partenaire."
+      setError(message)
+      onToast({ tone: 'error', title: 'Inscription impossible', message })
+      return
+    }
 
     setSubmitting(true)
     setError(null)
@@ -350,6 +363,20 @@ export function ProRegisterFlow({
                     </>
                   )}
                 </div>
+
+                <label className="mt-4 flex items-start gap-2 text-xs sm:text-sm text-slate-600">
+                  <input
+                    type="checkbox"
+                    name="accepte_cgu"
+                    checked={form.accepte_cgu}
+                    onChange={onCheckboxChange}
+                    className="mt-0.5 h-4 w-4 accent-green-700"
+                  />
+                  <span>
+                    J'accepte les <a href="#/cgu" target="_blank" rel="noopener noreferrer" className="text-green-700 font-bold hover:underline">conditions d'utilisation</a> et la{' '}
+                    <a href="#/politique-privee" target="_blank" rel="noopener noreferrer" className="text-green-700 font-bold hover:underline">politique de confidentialité</a>.
+                  </span>
+                </label>
 
                 {error && (
                   <div className="mt-4 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-xs text-rose-600 font-medium">

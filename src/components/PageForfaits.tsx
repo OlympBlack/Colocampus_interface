@@ -11,7 +11,7 @@ const KKIAPAY_PUBLIC_KEY = (import.meta as any).env.VITE_KKIAPAY_PUBLIC_KEY as s
 const KKIAPAY_SANDBOX = (import.meta as any).env.VITE_KKIAPAY_SANDBOX !== 'false'
 
 interface PageForfaitsProps {
-  session: AuthSession
+  session: AuthSession | null
   onToast: (toast: ToastDraft) => void
   isEmbedded?: boolean
   onSuccess?: (result: any) => void
@@ -126,7 +126,7 @@ export function PageForfaits({ session, onToast, isEmbedded, onSuccess, onRefres
     let cancelled = false
     setIsLoading(true)
 
-    fetchForfaits(session.token)
+    fetchForfaits(session?.token)
       .then((response) => {
         if (!cancelled) {
           const raw = response.data ?? []
@@ -152,7 +152,7 @@ export function PageForfaits({ session, onToast, isEmbedded, onSuccess, onRefres
     return () => {
       cancelled = true
     }
-  }, [session.token])
+  }, [session?.token])
 
   const uniqueForfaits = useMemo(() => {
     const seen = new Set<string>()
@@ -165,6 +165,11 @@ export function PageForfaits({ session, onToast, isEmbedded, onSuccess, onRefres
   }, [forfaits])
 
   async function handleAchat(forfait: ForfaitPublication) {
+    if (!session) {
+      window.location.hash = '#/connexion'
+      return
+    }
+
     setBuyingId(forfait.id)
     try {
       const transactionId = await requestKkiapayPayment({
@@ -235,14 +240,16 @@ export function PageForfaits({ session, onToast, isEmbedded, onSuccess, onRefres
     <div className="pb-4">
       {!isEmbedded && (
         <div className="mb-5">
-          <a
-            href={'#' + getDashboardPath(session.user.role)}
-            className="d-inline-flex align-items-center gap-2 mb-3 text-decoration-none fw-semibold"
-            style={{ color: 'var(--muted)', fontSize: '0.85rem' }}
-          >
-            <ArrowLeft size={16} />
-            Retour au tableau de bord
-          </a>
+          {session ? (
+            <a
+              href={'#' + getDashboardPath(session.user.role)}
+              className="d-inline-flex align-items-center gap-2 mb-3 text-decoration-none fw-semibold"
+              style={{ color: 'var(--muted)', fontSize: '0.85rem' }}
+            >
+              <ArrowLeft size={16} />
+              Retour au tableau de bord
+            </a>
+          ) : null}
           <div className="section__header">
             <div>
               <span className="section__eyebrow">Packs de crédits</span>
@@ -317,21 +324,30 @@ export function PageForfaits({ session, onToast, isEmbedded, onSuccess, onRefres
                     </li>
                   </ul>
 
-                  <button
-                    type="button"
-                    className={'button button--block mt-auto ' + (forfait.est_populaire ? 'button--primary' : 'button--secondary')}
-                    onClick={() => handleAchat(forfait)}
-                    disabled={buyingId !== null}
-                  >
-                    {buyingId === forfait.id ? (
-                      <>
-                        <span className="app-spinner" style={{ width: 16, height: 16, margin: 0, borderWidth: 2 }} />
-                        Ouverture du paiement…
-                      </>
-                    ) : (
-                      'Choisir ce pack'
-                    )}
-                  </button>
+                  {session ? (
+                    <button
+                      type="button"
+                      className={'button button--block mt-auto ' + (forfait.est_populaire ? 'button--primary' : 'button--secondary')}
+                      onClick={() => handleAchat(forfait)}
+                      disabled={buyingId !== null}
+                    >
+                      {buyingId === forfait.id ? (
+                        <>
+                          <span className="app-spinner" style={{ width: 16, height: 16, margin: 0, borderWidth: 2 }} />
+                          Ouverture du paiement…
+                        </>
+                      ) : (
+                        'Choisir ce pack'
+                      )}
+                    </button>
+                  ) : (
+                    <a
+                      href="#/connexion"
+                      className={'button button--block mt-auto ' + (forfait.est_populaire ? 'button--primary' : 'button--secondary')}
+                    >
+                      Se connecter pour choisir ce pack
+                    </a>
+                  )}
                 </div>
               </div>
             )

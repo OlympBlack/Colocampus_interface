@@ -28,6 +28,14 @@ export function MarketplaceProductPage({
   const [error, setError] = useState<string | null>(null)
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [isOpeningChat, setIsOpeningChat] = useState(false)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+
+  const productImages = useMemo(() => {
+    if (product?.images && product.images.length > 0) {
+      return product.images
+    }
+    return product?.url_image_banniere ? [product.url_image_banniere] : []
+  }, [product])
 
   useEffect(() => {
     let cancelled = false
@@ -144,14 +152,6 @@ export function MarketplaceProductPage({
     product.prix !== null && product.prix !== undefined
       ? `${Number(product.prix).toLocaleString('fr-FR')} FCFA`
       : 'Sur devis / Promo'
-
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-  const productImages = useMemo(() => {
-    if (product?.images && product.images.length > 0) {
-      return product.images
-    }
-    return product?.url_image_banniere ? [product.url_image_banniere] : []
-  }, [product])
 
   const activeImage = productImages[selectedImageIndex] || product?.url_image_banniere
 

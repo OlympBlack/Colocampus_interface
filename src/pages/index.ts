@@ -16,6 +16,11 @@ export { ListingPage } from './ListingPage'
 export { LoginPage } from './LoginPage'
 export { MarketplacePage } from './MarketplacePage'
 export { MarketplaceProductPage } from './MarketplaceProductPage'
+export { NotFoundPage } from './NotFoundPage'
+export {
+  ForgotPasswordPage,
+  ResetPasswordPage,
+} from './PasswordRecoveryPages'
 export { ProfilePage } from './ProfilePage'
 export { ProRegisterPage } from './ProRegisterPage'
 export { PublishPage } from './PublishPage'

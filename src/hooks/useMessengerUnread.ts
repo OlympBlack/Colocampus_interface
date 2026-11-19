@@ -10,17 +10,27 @@ import {
   showWebPushNotification,
 } from '../utils/webPush'
 
-const STORAGE_KEY_PREFIX = 'colcampus_last_seen_msg_ids'
+const STORAGE_KEY_PREFIX = 'colcampus.last_seen_msg_ids'
+const LEGACY_STORAGE_KEY_PREFIX = 'colcampus_last_seen_msg_ids'
 
 function getStorageKey(userId: number) {
-  return `${STORAGE_KEY_PREFIX}_${userId}`
+  return `${STORAGE_KEY_PREFIX}.${userId}`
+}
+
+function getLegacyStorageKey(userId: number) {
+  return `${LEGACY_STORAGE_KEY_PREFIX}_${userId}`
 }
 
 function getStoredMessageMap(userId: number): Record<number, number> {
   if (typeof window === 'undefined') return {}
   try {
     const key = getStorageKey(userId)
-    const raw = sessionStorage.getItem(key) || localStorage.getItem(key)
+    const legacyKey = getLegacyStorageKey(userId)
+    const raw =
+      sessionStorage.getItem(key) ||
+      localStorage.getItem(key) ||
+      sessionStorage.getItem(legacyKey) ||
+      localStorage.getItem(legacyKey)
     return raw ? JSON.parse(raw) : {}
   } catch {
     return {}
@@ -171,7 +181,7 @@ export function useMessengerUnread(session: AuthSession | null) {
     }
   }, [sessionToken, userId, notifyIncomingMessage])
 
-  // Polling temps réel toutes les 3.5 secondes
+  // Repli polling espacé : le temps réel est géré par Echo/WebPush quand disponible.
   useEffect(() => {
     if (!userId || !sessionToken) return
 
@@ -184,9 +194,11 @@ export function useMessengerUnread(session: AuthSession | null) {
     void refreshUnreadCount()
 
     // Polling régulier
-    const pollInterval = setInterval(() => {
-      void refreshUnreadCount()
-    }, 3500)
+    const pollInterval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void refreshUnreadCount()
+      }
+    }, 15000)
 
     // Détection immédiate lors du réveil du téléphone ou retour sur l'onglet
     const handleVisibilityChange = () => {

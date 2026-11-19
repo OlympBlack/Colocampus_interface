@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 
-const DISMISS_STORAGE_KEY = 'coletubenin_pwa_dismissed_until'
+const DISMISS_STORAGE_KEY = 'colcampus.pwa.dismissed-until'
+const LEGACY_DISMISS_STORAGE_KEY = 'coletubenin_pwa_dismissed_until'
 const DISMISS_DURATION_DAYS = 5
 
 export interface PwaInstallState {
@@ -41,7 +42,8 @@ export function usePwaInstall(): PwaInstallState {
     }
 
     // Vérifier si l'utilisateur a fermé la bannière récemment
-    const dismissedUntil = localStorage.getItem(DISMISS_STORAGE_KEY)
+    const dismissedUntil =
+      localStorage.getItem(DISMISS_STORAGE_KEY) || localStorage.getItem(LEGACY_DISMISS_STORAGE_KEY)
     if (dismissedUntil && Number(dismissedUntil) > Date.now()) {
       setIsDismissed(true)
     }
@@ -56,6 +58,7 @@ export function usePwaInstall(): PwaInstallState {
       setIsInstalled(true)
       setDeferredPrompt(null)
       localStorage.removeItem(DISMISS_STORAGE_KEY)
+      localStorage.removeItem(LEGACY_DISMISS_STORAGE_KEY)
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)

@@ -97,7 +97,7 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
                                     </div>
                                 </div>
                                 <WidgetAbonnement
-                                    // @ts-ignore
+                                    // @ts-expect-error Type d'abonnement élargi pour le widget
                                     abonnement={data?.abonnement}
                                     onUpgrade={() => window.location.hash = '#/forfaits-publications'}
                                 />
@@ -138,7 +138,7 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-1 space-y-6">
                                 <WidgetAbonnement
-                                    // @ts-ignore
+                                    // @ts-expect-error Type d'abonnement élargi pour le widget
                                     abonnement={data?.abonnement}
                                     onUpgrade={() => window.location.hash = '#/forfaits-publications'}
                                 />

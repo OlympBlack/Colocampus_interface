@@ -151,7 +151,7 @@ export function NotificationPopover({
             <>
               <h4 className="fb-notif-group-title">Nouveau</h4>
               {notifications.map(n => {
-                const isUnread = !Boolean(n.read_at)
+                const isUnread = !n.read_at
                 return (
                   <button
                     key={n.id}

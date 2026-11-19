@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useAnnouncement, useSimilarAnnouncements } from '../hooks/useAnnouncements'
-import { addFavorite, removeFavorite, fetchAnnouncementConversation } from '../services/api'
+import {
+  addFavorite,
+  getApiErrorMessage,
+  removeFavorite,
+  fetchAnnouncementConversation,
+  unlockAnnonceContact,
+} from '../services/api'
 import type { AuthSession } from '../types'
 import {
   formatAnnouncementType,
@@ -105,19 +111,26 @@ export function AnnonceDetailPage({
   useEffect(() => {
     if (announcement) {
       setIsFavorited(Boolean(announcement.est_favori))
+      setUnlockedPhone('')
+      setContactError(null)
     }
   }, [announcement])
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  const [unlockedPhone, setUnlockedPhone] = useState('')
+  const [isUnlockingContact, setIsUnlockingContact] = useState(false)
+  const [contactError, setContactError] = useState<string | null>(null)
   const [isKycPromptOpen, setIsKycPromptOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isOpeningChat, setIsOpeningChat] = useState(false)
   const [isStudentProfileOpen, setIsStudentProfileOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'details' | 'map'>('details')
 
-  const hasPhone = Boolean(announcement?.user.telephone)
+  const hasContact = Boolean(announcement?.contact_disponible || announcement?.user.telephone)
   const isOwnAnnouncement = Boolean(session && announcement?.user.id && session.user.id === announcement.user.id)
-  const canContact = Boolean(hasUnlockedVerifiedAccess(session) && hasPhone && !isOwnAnnouncement)
-  const isUnverifiedUser = Boolean(session && !hasUnlockedVerifiedAccess(session) && !isOwnAnnouncement)
+  const isVerifiedContact = Boolean(session && hasUnlockedVerifiedAccess(session))
+  const canContact = Boolean(session && hasContact && !isOwnAnnouncement && (isVerifiedContact || Boolean(unlockedPhone)))
+  const isUnverifiedUser = Boolean(session && !isVerifiedContact && !isOwnAnnouncement)
+  const contactPhone = unlockedPhone || announcement?.user.telephone || ''
 
 
 
@@ -218,6 +231,29 @@ export function AnnonceDetailPage({
       onToast({ tone: 'error', title: 'Erreur', message: msg })
     } finally {
       setIsSavingFavorite(false)
+    }
+  }
+
+  async function handleUnlockContact() {
+    if (!session || !currentAnnouncement) {
+      setIsLoginPromptOpen(true)
+      return
+    }
+    setIsUnlockingContact(true)
+    setContactError(null)
+    try {
+      const response = await unlockAnnonceContact(session.token, currentAnnouncement.id)
+      const phone = response.data.user.telephone ?? ''
+      setUnlockedPhone(phone)
+      setIsContactModalOpen(true)
+    } catch (err) {
+      const payload = (err as { payload?: Record<string, unknown> })?.payload
+      const message = getApiErrorMessage(err, 'Impossible de débloquer le contact pour le moment.')
+      setContactError(message)
+      if (payload?.verification_required) setIsKycPromptOpen(true)
+      onToast({ tone: 'error', title: 'Déblocage impossible', message })
+    } finally {
+      setIsUnlockingContact(false)
     }
   }
 
@@ -820,7 +856,7 @@ export function AnnonceDetailPage({
                     <button style={S.btnPrimary} onClick={() => setIsContactModalOpen(true)}>
                       <UiIcon name="message-circle" /> Contacter l'annonceur
                     </button>
-                  ) : isUnverifiedUser && hasPhone ? (
+                  ) : isUnverifiedUser && hasContact ? (
                     <button
                       style={{
                         ...S.btnPrimary,
@@ -829,11 +865,12 @@ export function AnnonceDetailPage({
                         color: '#FFFFFF',
                         boxShadow: '0 4px 14px rgba(217, 119, 6, 0.28)',
                       }}
-                      onClick={() => setIsKycPromptOpen(true)}
+                      onClick={handleUnlockContact}
+                      disabled={isUnlockingContact}
                     >
-                      <UiIcon name="shield" /> Certifier mon compte pour contacter
+                      <UiIcon name="shield" /> {isUnlockingContact ? 'Déblocage…' : 'Débloquer le contact (1 gratuit)'}
                     </button>
-                  ) : !session && hasPhone ? (
+                  ) : !session && hasContact ? (
                     <button style={S.btnPrimary} onClick={() => setIsLoginPromptOpen(true)}>
                       <UiIcon name="lock" /> Débloquer le contact
                     </button>
@@ -896,7 +933,7 @@ export function AnnonceDetailPage({
                 )}
 
                 {/* Login prompt inline */}
-                {!session && hasPhone && isLoginPromptOpen && (
+                {!session && hasContact && isLoginPromptOpen && (
                   <div style={S.loginPrompt}>
                     <strong style={{ fontSize: 13.5, color: '#0F172A' }}>Connexion requise</strong>
                     <p style={{ fontSize: 12.5, color: '#64748B', marginTop: 4, lineHeight: 1.5 }}>
@@ -939,11 +976,12 @@ export function AnnonceDetailPage({
                       ? 'Choisissez WhatsApp ou le chat interne sans quitter cette fiche.'
                       : isOwnAnnouncement
                         ? 'Vous ne pouvez pas contacter votre propre annonce.'
-                        : 'Votre carte d\'étudiant ou CIP validée est requise pour débloquer les échanges.'
-                    : hasPhone
+                         : 'Un premier contact est gratuit après vérification de votre e-mail ; faites certifier votre compte pour continuer.'
+                     : hasContact
                       ? 'Connexion nécessaire pour accéder aux coordonnées.'
                       : 'Contact direct non disponible pour cette annonce.'}
-                </p>
+                 </p>
+                 {contactError && <p style={{ ...S.note, color: '#B91C1C' }} role="alert">{contactError}</p>}
 
                 {/* Bouton Signaler l'annonce */}
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px dashed #E2E8F0' }}>
@@ -1011,7 +1049,7 @@ export function AnnonceDetailPage({
             <button style={{ ...S.btnPrimary, width: 'auto', flex: 1, minWidth: 0 }} onClick={() => setIsContactModalOpen(true)}>
               <UiIcon name="message-circle" /> Contacter
             </button>
-          ) : isUnverifiedUser && hasPhone ? (
+          ) : isUnverifiedUser && hasContact ? (
             <button
               style={{
                 ...S.btnPrimary,
@@ -1023,11 +1061,12 @@ export function AnnonceDetailPage({
                 fontSize: 12,
                 padding: '9px 10px',
               }}
-              onClick={() => setIsKycPromptOpen(true)}
+              onClick={handleUnlockContact}
+              disabled={isUnlockingContact}
             >
-              <UiIcon name="shield" /> Certifier mon compte
+              <UiIcon name="shield" /> {isUnlockingContact ? 'Déblocage…' : 'Contact gratuit'}
             </button>
-          ) : !session && hasPhone ? (
+          ) : !session && hasContact ? (
             <button style={{ ...S.btnPrimary, width: 'auto', flex: 1, minWidth: 0 }} onClick={() => setIsLoginPromptOpen(true)}>
               <UiIcon name="lock" /> Se connecter
             </button>
@@ -1120,9 +1159,10 @@ export function AnnonceDetailPage({
               )}
               <p style={M.choiceLabel}>Canal de contact</p>
 
+              {contactPhone ? (
               <a
                 className="colcampus-opt-btn"
-                href={buildWhatsappContactUrl(currentAnnouncement.user.telephone ?? '', currentAnnouncement.titre)}
+                href={buildWhatsappContactUrl(contactPhone, currentAnnouncement.titre)}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setIsContactModalOpen(false)}
@@ -1147,6 +1187,20 @@ export function AnnonceDetailPage({
                 </div>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#94A3B8' }}><polyline points="9 18 15 12 9 6" /></svg>
               </a>
+              ) : (
+                <button
+                  className="colcampus-opt-btn"
+                  onClick={handleUnlockContact}
+                  disabled={isUnlockingContact}
+                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px', borderRadius: 16, background: '#F8FAFC', width: '100%', textAlign: 'left', border: '1px solid #F1F5F9', cursor: 'pointer' }}
+                >
+                  <span style={{ ...M.optIcon, background: '#FEF3C7', color: '#B45309' }}><UiIcon name="lock" /></span>
+                  <div style={{ flex: 1 }}>
+                    <div style={M.optTitle}>{isUnlockingContact ? 'Déblocage en cours…' : 'Voir le numéro WhatsApp'}</div>
+                    <div style={M.optSub}>Premier contact gratuit, puis certification requise</div>
+                  </div>
+                </button>
+              )}
 
               <button
                 className="colcampus-opt-btn"

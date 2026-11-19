@@ -23,7 +23,7 @@ jobs:
 
       - name: Build frontend
         env:
-          VITE_API_BASE_URL: https://colcampusapi.lavoixdabouloussi.org/api
+          VITE_API_BASE_URL: https://coletubeninapi.lavoixdabouloussi.org/api
         run: npm run build
 
       - name: Verify FTP Secrets

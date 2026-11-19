@@ -21,9 +21,10 @@ export function resolveMediaUrl(url: string | null | undefined): string {
     finalUrl = `${apiOrigin}${clean}`
   }
 
-  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && finalUrl.includes('localhost:8000')) {
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
     const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '')
-    finalUrl = finalUrl.replace(/https?:\/\/localhost:8000/, apiOrigin)
+    finalUrl = finalUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1):8000/, apiOrigin)
+    finalUrl = finalUrl.replace('colcampusapi.lavoixdabouloussi.org', 'coletubeninapi.lavoixdabouloussi.org')
   }
 
   // Force HTTPS sur production si la page est en HTTPS (évite les erreurs Mixed Content du navigateur)

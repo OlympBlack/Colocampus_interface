@@ -15,7 +15,7 @@ export interface AnnonceUser {
   name: string | null
   prenoms: string | null
   role: UserRole | string | null
-  telephone: string | null
+  telephone?: string | null
   photo_profil?: string | null
   statut_verification?: VerificationStatus | null
   profil?: UserProfile | null
@@ -58,6 +58,8 @@ export interface Annonce {
   statut_publication?: 'active' | 'en_attente' | 'refusee' | 'expiree'
   vues_count?: number
   created_at: string | null
+  updated_at?: string | null
+  contact_disponible?: boolean
   score_similarite?: number
   est_favori?: boolean
   user: AnnonceUser
@@ -99,6 +101,7 @@ export interface RegisterPayload {
   email: string
   password: string
   telephone: string
+  accepte_cgu: boolean
   photo_profil: File
   etablissement?: string
   universite_id?: number | string

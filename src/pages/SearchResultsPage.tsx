@@ -234,7 +234,7 @@ export function SearchResultsPage({
   return (
     <div className="search-results-page bg-slate-50 min-h-screen pb-16">
       {/* ── BARRE DE CONTRÔLE COMPACTE & ERGONOMIQUE (STICKY) ── */}
-      <header className="bg-white border-b border-slate-200/80 sticky top-0 md:top-[64px] z-30 shadow-xs">
+      <header className="bg-white border-b border-slate-200/80 sticky top-[var(--header-bottom)] z-20 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 space-y-2.5">
           
           {/* Ligne 1 : Navigation retour + Titre contextuel + Compteur + Boutons d'action */}

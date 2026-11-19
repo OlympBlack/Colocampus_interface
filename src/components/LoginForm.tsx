@@ -192,6 +192,11 @@ export function LoginForm({
                   </button>
                 </div>
               </label>
+              <div className="text-right mt-1">
+                <a href="#/mot-de-passe-oublie" className="text-xs text-green-700 font-semibold hover:underline">
+                  Mot de passe oublié ?
+                </a>
+              </div>
             </div>
 
             {notice && (

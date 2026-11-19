@@ -23,6 +23,7 @@ const INITIAL_FORM: RegisterFormState = {
   email: '',
   password: '',
   telephone: '',
+  accepte_cgu: false,
   photo_profil: new File([], ''),
   etablissement: '',
   universite_id: '',
@@ -119,6 +120,11 @@ export function RegisterFlow({
     setForm((current) => ({ ...current, [name]: value }))
   }
 
+  function onCheckboxChange(event: ChangeEvent<HTMLInputElement>) {
+    const { name, checked } = event.target
+    setForm((current) => ({ ...current, [name]: checked }))
+  }
+
   async function onFileChange(event: ChangeEvent<HTMLInputElement>) {
     const rawFile = event.target.files?.[0] ?? null
     const { name } = event.target
@@ -167,6 +173,20 @@ export function RegisterFlow({
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!role) return
+
+    if (!form.accepte_cgu) {
+      const message = "Vous devez accepter les conditions d'utilisation pour créer un compte."
+      setError(message)
+      onToast({ tone: 'error', title: 'Inscription impossible', message })
+      return
+    }
+
+    if (role === 'etudiant' && !(form.preferences?.length ?? 0)) {
+      const message = 'Sélectionnez au moins une préférence de vie en colocation.'
+      setError(message)
+      onToast({ tone: 'error', title: 'Inscription impossible', message })
+      return
+    }
 
     setSubmitting(true)
     setError(null)
@@ -546,7 +566,7 @@ export function RegisterFlow({
                       </label>
 
                       <div className="col-span-1 sm:col-span-2 flex flex-col gap-2 mt-1">
-                        <span className={labelClass}>Préférences de vie en colocation</span>
+                        <span className={labelClass}>Préférences de vie en colocation <span className="text-rose-600">*</span></span>
                         <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           {STUDENT_PREFERENCE_OPTIONS.map((option) => (
                             <label
@@ -696,6 +716,20 @@ export function RegisterFlow({
                     </p>
                   </div>
                 )}
+
+                <label className="mt-4 flex items-start gap-2 text-xs sm:text-sm text-slate-600">
+                  <input
+                    type="checkbox"
+                    name="accepte_cgu"
+                    checked={form.accepte_cgu}
+                    onChange={onCheckboxChange}
+                    className="mt-0.5 h-4 w-4 accent-green-700"
+                  />
+                  <span>
+                    J'accepte les <a href="#/cgu" target="_blank" rel="noopener noreferrer" className="text-green-700 font-bold hover:underline">conditions d'utilisation</a> et la{' '}
+                    <a href="#/politique-privee" target="_blank" rel="noopener noreferrer" className="text-green-700 font-bold hover:underline">politique de confidentialité</a>.
+                  </span>
+                </label>
 
                 {error && (
                   <div className="mt-4 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-xs text-rose-600 font-medium">

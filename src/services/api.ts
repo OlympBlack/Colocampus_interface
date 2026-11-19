@@ -70,58 +70,158 @@ export class ApiError extends Error {
   }
 }
 
-function withAuthHeaders(token: string, headers: HeadersInit = {}) {
-  return {
-    ...headers,
-    Authorization: `Bearer ${token}`,
-  }
+function withAuthHeaders(token: string | undefined, headers: HeadersInit = {}) {
+  return token ? { ...headers, Authorization: `Bearer ${token}` } : headers
 }
 
-function resolveApiBaseUrls() {
-  const configuredBaseUrl = (import.meta as any).env.VITE_API_BASE_URL as string | undefined
-  const apiPort = ((import.meta as any).env.VITE_API_PORT as string | undefined) ?? '8000'
+const REQUEST_TIMEOUT_MS = 10000
 
-  const candidates: string[] = []
+const VALIDATION_MESSAGES: Record<string, string> = {
+  'validation.required': 'Ce champ est obligatoire.',
+  'validation.mimes': "Format de fichier non autorisé (utilisez JPG, PNG ou PDF).",
+  'validation.image': 'Ce fichier doit être une image.',
+  'validation.file': 'Ce champ doit être un fichier.',
+  'validation.max': 'La valeur est trop longue.',
+  'validation.min': 'La valeur est trop courte.',
+  'validation.size': 'La taille du fichier est trop importante.',
+  'validation.email': 'Cette adresse e-mail est invalide.',
+  'validation.unique': 'Cette valeur est déjà utilisée.',
+  'validation.exists': 'Cette sélection est invalide.',
+  'validation.in': 'Cette valeur est invalide.',
+  'validation.numeric': 'Ce champ doit contenir un nombre.',
+  'validation.integer': 'Ce champ doit contenir un nombre entier.',
+  'validation.array': 'Cette sélection est invalide.',
+  'validation.confirmed': 'La confirmation ne correspond pas.',
+  'validation.string': 'Ce champ doit contenir du texte.',
+  'validation.date': 'Cette date est invalide.',
+}
 
+const FIELD_LABELS: Record<string, string> = {
+  preferences: 'Préférences de vie en colocation',
+  fichier: 'Fichier',
+  documents: 'Pièces justificatives',
+  numero_piece: 'Numéro de pièce',
+  email: 'Adresse e-mail',
+  password: 'Mot de passe',
+  current_password: 'Mot de passe actuel',
+  telephone: 'Téléphone',
+  title: 'Titre',
+  description: 'Description',
+  loyer: 'Loyer',
+}
+
+export function apiErrorMessage(payload: unknown, fallback: string): string {
+  if (!payload || typeof payload !== 'object') return fallback
+  const body = payload as Record<string, unknown>
+
+  // Ne jamais afficher les détails d'exception (mode debug, traces, chemins serveur).
+  if (body.exception || body.trace || body.file) {
+    return 'Une erreur est survenue lors du traitement de votre demande. Veuillez réessayer.'
+  }
+
+  const errors = body.errors
+  if (errors && typeof errors === 'object') {
+    const messages = Object.entries(errors as Record<string, unknown>)
+      .flatMap(([field, raw]) => {
+        const values = Array.isArray(raw) ? raw : [raw]
+        return values
+          .filter((value): value is string => typeof value === 'string')
+          .map((value) => {
+            const translated = VALIDATION_MESSAGES[value] ?? value
+            const label = FIELD_LABELS[field] ?? field.replace(/_/g, ' ')
+            return `${label} : ${translated}`
+          })
+      })
+      .slice(0, 3)
+    if (messages.length) return messages.join(' ')
+  }
+
+  const message = typeof body.message === 'string' ? body.message.trim() : ''
+  if (!message || message in VALIDATION_MESSAGES) {
+    return VALIDATION_MESSAGES[message] ?? fallback
+  }
+  if (/^server error$/i.test(message) || message.includes('Stack trace') || message.includes(' at /')) {
+    return fallback
+  }
+  return message
+}
+
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) return apiErrorMessage(error.payload, fallback)
+  if (error instanceof Error && error.message) return error.message
+  return fallback
+}
+
+function resolveApiBaseUrl(): string {
+  const configuredBaseUrl = ((import.meta as any).env.VITE_API_BASE_URL as string | undefined)?.trim()
+
+  const isBrowser = typeof window !== 'undefined'
+  const hostname = isBrowser ? window.location.hostname.toLowerCase() : ''
+  const isLocalHost =
+    !isBrowser ||
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0' ||
+    hostname.endsWith('.local') ||
+    hostname.endsWith('.test')
+
+  // Environnement local de développement
+  if (isLocalHost) {
+    if (configuredBaseUrl && !configuredBaseUrl.includes('colcampusapi')) {
+      return configuredBaseUrl.replace(/\/$/, '')
+    }
+    const protocol = isBrowser ? window.location.protocol : 'http:'
+    const host = isBrowser && hostname ? hostname : '127.0.0.1'
+    const apiPort = ((import.meta as any).env.VITE_API_PORT as string | undefined) ?? '8000'
+    return `${protocol}//${host}:${apiPort}/api`
+  }
+
+  // Environnement de production hébergé (ex: colocampus.bj, www.colocampus.bj, lavoixdabouloussi.org)
+  // L'unique backend de production est https://coletubeninapi.lavoixdabouloussi.org
   if (configuredBaseUrl) {
-    candidates.push(configuredBaseUrl.replace(/\/$/, ''))
+    const sanitized = configuredBaseUrl.replace('colcampusapi.lavoixdabouloussi.org', 'coletubeninapi.lavoixdabouloussi.org')
+    if (
+      sanitized.startsWith('https://') &&
+      !sanitized.includes(':8000') &&
+      !sanitized.includes('localhost') &&
+      !sanitized.includes('127.0.0.1')
+    ) {
+      return sanitized.replace(/\/$/, '')
+    }
   }
 
-  if (typeof window === 'undefined') {
-    candidates.push('http://127.0.0.1:8000/api')
-    return candidates
-  }
-
-  const hostname = window.location.hostname
-  const protocol = window.location.protocol
-
-  // Détection automatique de la production (sous-domaine de lavoixdabouloussi.org)
-  if (hostname.includes('lavoixdabouloussi.org')) {
-    candidates.push('https://coletubeninapi.lavoixdabouloussi.org/api')
-    candidates.push('https://colcampusapi.lavoixdabouloussi.org/api')
-  }
-
-  // Environnement local (localhost, 127.0.0.1 ou IP de dev locale)
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    candidates.push(
-      `${protocol}//${hostname}:${apiPort}/api`,
-      'http://127.0.0.1:8000/api',
-      'http://localhost:8000/api'
-    )
-  } else if (!hostname.includes('lavoixdabouloussi.org')) {
-    // Autre hôte (ex: test sur réseau local)
-    candidates.push(`${protocol}//${hostname}:${apiPort}/api`)
-  }
-
-  return Array.from(new Set(candidates))
+  return 'https://coletubeninapi.lavoixdabouloussi.org/api'
 }
 
-export const API_BASE_URL = resolveApiBaseUrls()[0]
+export const API_BASE_URL = resolveApiBaseUrl()
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const externalSignal = init.signal
+
+  const onExternalAbort = () => controller.abort()
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort()
+    else externalSignal.addEventListener('abort', onExternalAbort, { once: true })
+  }
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    window.clearTimeout(timeout)
+    externalSignal?.removeEventListener('abort', onExternalAbort)
+  }
+}
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  for (const baseUrl of resolveApiBaseUrls()) {
+  const url = `${API_BASE_URL}${path}`
+  const method = (init?.method ?? 'GET').toUpperCase()
+  const maxAttempts = method === 'GET' || method === 'HEAD' ? 2 : 1
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const response = await fetch(`${baseUrl}${path}`, {
+      const response = await fetchWithTimeout(url, {
         ...init,
         headers: {
           Accept: 'application/json',
@@ -132,7 +232,11 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
       const payload = await response.json().catch(() => null)
 
       if (!response.ok) {
-        throw new ApiError(payload?.message ?? 'Une erreur est survenue lors de la communication avec le serveur.', response.status, payload)
+        throw new ApiError(
+          apiErrorMessage(payload, 'Une erreur est survenue lors de la communication avec le serveur.'),
+          response.status,
+          payload
+        )
       }
 
       if (init?.headers && ('Authorization' in init.headers || 'authorization' in (init.headers as any))) {
@@ -141,18 +245,16 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
       return payload as T
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw error
-      }
+      if (error instanceof ApiError) throw error
+      if (attempt === maxAttempts || (init?.signal && init.signal.aborted)) break
     }
   }
 
-  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
-  if (isOffline) {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
     throw new Error('Connexion impossible. Veuillez vérifier votre connexion Internet et réessayer.')
   }
 
-  throw new Error('Connexion impossible. Veuillez vérifier votre connexion Internet ou réessayer ultérieurement.')
+  throw new Error('Le serveur met trop de temps à répondre. Veuillez réessayer.')
 }
 function buildQuery(filters: AnnouncementFilters) {
   const params = new URLSearchParams()
@@ -187,6 +289,7 @@ function buildRegisterFormData(payload: RegisterPayload) {
   appendValue(formData, 'email', payload.email)
   appendValue(formData, 'password', payload.password)
   appendValue(formData, 'telephone', payload.telephone)
+  formData.append('accepte_cgu', payload.accepte_cgu ? '1' : '0')
   appendValue(formData, 'photo_profil', payload.photo_profil)
   appendValue(formData, 'etablissement', payload.etablissement)
   appendValue(formData, 'universite_id', payload.universite_id)
@@ -460,9 +563,42 @@ export async function updateCurrentUser(token: string, payload: UpdateProfilePay
   })
 }
 
-export async function fetchDashboard(token: string) {
+export async function updateUserPassword(
+  token: string,
+  currentPassword: string,
+  password: string
+): Promise<{ message?: string } | null> {
+  return requestJson<{ message?: string }>('/me/password', {
+    method: 'PATCH',
+    headers: withAuthHeaders(token, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      current_password: currentPassword,
+      password,
+      password_confirmation: password,
+    }),
+  })
+}
+
+export async function requestPasswordReset(email: string) {
+  return requestJson<{ message: string }>('/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+}
+
+export async function resetPassword(email: string, token: string, password: string) {
+  return requestJson<{ message: string }>('/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, token, password, password_confirmation: password }),
+  })
+}
+
+export async function fetchDashboard(token: string, signal?: AbortSignal) {
   return requestJson<{ data: DashboardData }>('/dashboard', {
     headers: withAuthHeaders(token),
+    signal,
   })
 }
 
@@ -635,6 +771,13 @@ export async function removeFavorite(token: string, annonceId: number) {
   })
 }
 
+export async function unlockAnnonceContact(token: string, annonceId: number) {
+  return requestJson<{ data: Annonce }>(`/annonces/${annonceId}/contact`, {
+    method: 'POST',
+    headers: withAuthHeaders(token),
+  })
+}
+
 export async function createPublicite(token: string, payload: PubliciteDraft) {
   return requestJson<{ message: string; data: PubliciteBoutique }>('/publicites-boutiques', {
     method: 'POST',
@@ -680,7 +823,7 @@ export async function completeProfile(token: string, formData: FormData) {
   })
 }
 
-export async function fetchForfaits(token: string) {
+export async function fetchForfaits(token?: string) {
   return requestJson<{ data: ForfaitPublication[] }>('/forfaits-publications', {
     headers: withAuthHeaders(token),
   })
@@ -1059,19 +1202,11 @@ export async function updateAdminPlatformSettings(
   data: FormData | Partial<PlatformSettings>
 ): Promise<{ message: string; data: PlatformSettings }> {
   if (data instanceof FormData) {
-    const res = await fetch(`${API_BASE_URL}/admin/settings`, {
+    return requestJson<{ message: string; data: PlatformSettings }>('/admin/settings', {
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: withAuthHeaders(token),
       body: data,
     })
-    const json = await res.json()
-    if (!res.ok) {
-      throw new Error(json.message || 'Erreur lors de la mise à jour des paramètres.')
-    }
-    return json
   }
 
   return requestJson<{ message: string; data: PlatformSettings }>('/admin/settings', {

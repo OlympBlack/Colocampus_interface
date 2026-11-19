@@ -12,7 +12,12 @@ import {
 } from 'lucide-react'
 import { KYC_DOCUMENT_OPTIONS, NIVEAU_OPTIONS, SEXE_OPTIONS, STUDENT_PREFERENCE_OPTIONS } from '../constants'
 import { useUniversites } from '../hooks/useUniversites'
-import { API_BASE_URL, updateCurrentUser, uploadKycDocuments } from '../services/api'
+import {
+  getApiErrorMessage,
+  updateCurrentUser,
+  updateUserPassword,
+  uploadKycDocuments,
+} from '../services/api'
 import type { AuthSession, KycDocument, KycDocumentDraft, UpdateProfilePayload, VerificationStatus } from '../types'
 import { getDashboardPath, getRoleLabel } from '../utils/auth'
 import type { ToastDraft } from './ToastViewport'
@@ -324,7 +329,7 @@ function InfosTab({
       onToast({
         tone: 'error',
         title: 'Erreur',
-        message: error instanceof Error ? error.message : 'Erreur réseau pendant la mise à jour.',
+        message: getApiErrorMessage(error, 'Erreur réseau pendant la mise à jour.'),
       })
     } finally {
       setSaving(false)
@@ -484,7 +489,7 @@ function PreferencesTab({
       onToast({
         tone: 'error',
         title: 'Erreur',
-        message: error instanceof Error ? error.message : 'Mise à jour impossible.',
+        message: getApiErrorMessage(error, 'Mise à jour impossible.'),
       })
     } finally {
       setSaving(false)
@@ -570,6 +575,17 @@ function DocumentsTab({
       return
     }
 
+    if (drafts.some((draft) => draft.numero_piece.trim().length < 5)) {
+      onToast({ tone: 'error', title: 'Numéro invalide', message: 'Indiquez un numéro de pièce d’au moins 5 caractères.' })
+      return
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
+    if (drafts.some((draft) => !allowedTypes.includes(draft.fichier.type) || draft.fichier.size > 5 * 1024 * 1024)) {
+      onToast({ tone: 'error', title: 'Fichier invalide', message: 'Utilisez un JPG, PNG ou PDF de 5 Mo maximum.' })
+      return
+    }
+
     setUploading(true)
     try {
       const response = await uploadKycDocuments(session.token, drafts)
@@ -580,7 +596,7 @@ function DocumentsTab({
       onToast({
         tone: 'error',
         title: 'Erreur',
-        message: error instanceof Error ? error.message : "L'envoi des documents a échoué.",
+        message: getApiErrorMessage(error, "L'envoi des documents a échoué."),
       })
     } finally {
       setUploading(false)
@@ -704,33 +720,6 @@ function DocumentsTab({
 
 /* ─── Onglet : sécurité ────────────────────────────────── */
 
-async function submitPasswordChange(token: string, currentPassword: string, newPassword: string) {
-  const response = await fetch(`${API_BASE_URL}/me/password`, {
-    method: 'PATCH',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      current_password: currentPassword,
-      password: newPassword,
-      password_confirmation: newPassword,
-    }),
-  })
-
-  const payload = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    if (response.status === 404 || response.status === 405 || response.status === 501) {
-      throw new Error("Le service de changement de mot de passe n'est pas encore disponible.")
-    }
-    throw new Error(payload?.message ?? 'Le changement de mot de passe a échoué.')
-  }
-
-  return payload as { message?: string } | null
-}
-
 function SecurityTab({ session, onToast }: { session: AuthSession; onToast: (toast: ToastDraft) => void }) {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -751,7 +740,7 @@ function SecurityTab({ session, onToast }: { session: AuthSession; onToast: (toa
 
     setSaving(true)
     try {
-      const response = await submitPasswordChange(session.token, currentPassword, newPassword)
+      const response = await updateUserPassword(session.token, currentPassword, newPassword)
       onToast({
         tone: 'success',
         title: 'Mot de passe modifié',
@@ -764,7 +753,7 @@ function SecurityTab({ session, onToast }: { session: AuthSession; onToast: (toa
       onToast({
         tone: 'error',
         title: 'Erreur',
-        message: error instanceof Error ? error.message : 'Le changement de mot de passe a échoué.',
+        message: getApiErrorMessage(error, 'Le changement de mot de passe a échoué.'),
       })
     } finally {
       setSaving(false)

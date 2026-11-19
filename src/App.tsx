@@ -24,6 +24,9 @@ import {
   LoginPage,
   MarketplacePage,
   MarketplaceProductPage,
+  NotFoundPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
   ProfilePage,
   PublishPage,
   RegisterPage,
@@ -134,7 +137,7 @@ export default function App() {
   }, [route])
 
   useEffect(() => {
-    if (!session && (route.name === 'dashboard' || route.name === 'profile' || route.name === 'publish' || route.name === 'forfaits')) {
+    if (!session && (route.name === 'dashboard' || route.name === 'profile' || route.name === 'publish')) {
       setAuthNotice('Connectez-vous pour acceder a votre espace personnel.')
       pushToast({
         tone: 'info',
@@ -154,7 +157,7 @@ export default function App() {
   }, [route, session])
 
   useEffect(() => {
-    if (session && !isAuthTransitioning && (route.name === 'login' || route.name === 'register' || route.name === 'verify' || route.name === 'pro-register')) {
+    if (session && !isAuthTransitioning && (route.name === 'login' || route.name === 'register' || route.name === 'verify')) {
       window.location.hash = '#/'
     }
   }, [route, session, isAuthTransitioning])
@@ -434,9 +437,13 @@ export default function App() {
         ) : null}
 
         {route.name === 'register' && !session ? <RegisterPage onSuccess={handleRegisterSuccess} onToast={pushToast} /> : null}
-        {route.name === 'pro-register' && !session ? <ProRegisterPage onSuccess={handleRegisterSuccess} onToast={pushToast} /> : null}
+        {route.name === 'pro-register' ? (
+          <ProRegisterPage session={session} onSuccess={handleRegisterSuccess} onToast={pushToast} />
+        ) : null}
         {route.name === 'verify' && !session ? <VerifyAccountPage onSuccess={handleVerificationSuccess} onToast={pushToast} /> : null}
         {route.name === 'login' && !session ? <LoginPage onSuccess={handleLoginSuccess} onToast={pushToast} onRequireVerification={handleRequireVerification} /> : null}
+        {route.name === 'forgot-password' ? <ForgotPasswordPage onToast={pushToast} /> : null}
+        {route.name === 'reset-password' ? <ResetPasswordPage onToast={pushToast} /> : null}
 
         {route.name === 'dashboard' && session ? (
           <DashboardPage
@@ -459,9 +466,7 @@ export default function App() {
           />
         ) : null}
 
-        {route.name === 'forfaits' && session && (session.user.role === 'demarcheur' || session.user.role === 'boutique' || session.user.role === 'admin') ? (
-          <ForfaitsPage session={session} onToast={pushToast} />
-        ) : null}
+        {route.name === 'forfaits' ? <ForfaitsPage session={session} onToast={pushToast} /> : null}
 
         {route.name === 'about' ? <AboutPage /> : null}
         {route.name === 'testimonials' ? <TestimonialsPage /> : null}
@@ -469,6 +474,7 @@ export default function App() {
         {route.name === 'blog' ? <BlogPage /> : null}
         {route.name === 'blogPost' ? <BlogPostPage slug={route.slug} /> : null}
         {route.name === 'legal' ? <LegalPage page={route.page} /> : null}
+        {route.name === 'notFound' ? <NotFoundPage /> : null}
       </main>
 
       {usesSiteLayout ? <SiteFooter /> : null}
