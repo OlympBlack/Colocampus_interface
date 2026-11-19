@@ -217,7 +217,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
         }}
       >
         <span style={{ lineHeight: 1.3 }}>
-          🔔 <strong>Notifications du téléphone</strong> : activez pour être alerté même dans une autre application.
+          🔔 <strong>Notifications</strong> : activez pour être alerté.
         </span>
         <button
           type="button"
