@@ -52,6 +52,10 @@ function parseRoute(path: string): AppRoute {
   const withLeadingSlash = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`
   const normalized = withLeadingSlash.length > 1 ? withLeadingSlash.replace(/\/+$/, '') : withLeadingSlash
 
+  if (normalized === '/' || normalized === '') {
+    return { name: 'home', path: '/' }
+  }
+
   if (normalized === '/recherche' || normalized === '/resultats' || normalized === '/search') {
     return { name: 'search', path: '/recherche', query: rawQuery }
   }
