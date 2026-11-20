@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Trash2, Star, UploadCloud, Video } from 'lucide-react'
 import { compressImages } from '../utils/imageCompressor'
+import { ROOM_TYPE_OPTIONS } from '../constants'
 import {
   API_BASE_URL,
   deleteAnnouncement,
@@ -1740,6 +1741,23 @@ function AnnouncementFormFields({
           <option value="CHAMBRE_VIDE">Chambre seule</option>
         </select>
       </div>
+      {(form.type_annonce === 'CHAMBRE_VIDE' || form.type_annonce === 'PLACE_LIBRE_HOTE') && (
+        <div>
+          <label className={labelClass}>Type de chambre</label>
+          <select
+            className={inputClass}
+            value={form.type_chambre ?? ''}
+            onChange={(e) => set({ type_chambre: e.target.value || undefined })}
+          >
+            <option value="">— Choisir un type —</option>
+            {ROOM_TYPE_OPTIONS.map((rt) => (
+              <option key={rt.value} value={rt.value}>
+                {rt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {form.type_annonce === 'PLACE_LIBRE_HOTE' && (
         <div>
           <label className={labelClass}>Places disponibles *</label>
@@ -2409,6 +2427,7 @@ export function DashboardWorkspace({
       source_eau: (annonce.source_eau as AnnouncementDraft['source_eau']) ?? 'SONEB',
       type_electricite: (annonce.type_electricite as AnnouncementDraft['type_electricite']) ?? 'SBEE_CARTE',
       type_annonce: annonce.type_annonce ?? 'PLACE_LIBRE_HOTE',
+      type_chambre: annonce.type_chambre ?? undefined,
       nombre_places: annonce.nombre_places ?? 1,
       statut_disponibilite: annonce.statut_disponibilite ?? 'available',
       lien_google_maps: annonce.lien_google_maps ?? '',
@@ -2456,6 +2475,15 @@ export function DashboardWorkspace({
             onSubmit={handleUpdate}
             className="relative max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
           >
+            {/* Bouton fermer */}
+            <button
+              type="button"
+              onClick={() => { setEditingAnnouncement(null); setEditingForm(null) }}
+              className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition z-10"
+              aria-label="Fermer"
+            >
+              ✕
+            </button>
             <div className="mb-5">
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-blue-700">Modification</span>
               <h2 className="mt-1 text-xl font-extrabold text-slate-900">Modifier l'annonce</h2>
