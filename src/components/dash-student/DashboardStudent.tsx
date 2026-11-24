@@ -20,6 +20,7 @@ interface DashboardStudentProps {
     onAnnouncementEdit?: (annonce: Annonce) => void;
     onAnnouncementDelete?: (annonce: Annonce) => void;
     onAnnouncementStatusChange?: (id: number, status: string) => void;
+    onAnnouncementBoost?: (annonce: Annonce) => void;
     onToast: (toast: any) => void;
     onRefreshData: () => void;
     onSessionChange: (session: AuthSession) => void;
@@ -65,6 +66,7 @@ export const DashboardStudent: React.FC<DashboardStudentProps> = ({
     onAnnouncementEdit,
     onAnnouncementDelete,
     onAnnouncementStatusChange,
+    onAnnouncementBoost,
     onToast,
     onRefreshData,
     onSessionChange,
@@ -129,6 +131,7 @@ export const DashboardStudent: React.FC<DashboardStudentProps> = ({
                                             onEdit={onAnnouncementEdit!}
                                             onDelete={onAnnouncementDelete!}
                                             onStatusChange={() => {}}
+                                            onBoost={onAnnouncementBoost}
                                         />
                                     </div>
                                 ) : (
@@ -223,6 +226,7 @@ export const DashboardStudent: React.FC<DashboardStudentProps> = ({
                                 onEdit={onAnnouncementEdit!}
                                 onDelete={onAnnouncementDelete!}
                                 onStatusChange={onAnnouncementStatusChange || (() => {})}
+                                onBoost={onAnnouncementBoost}
                             />
                         </div>
                     ) : (

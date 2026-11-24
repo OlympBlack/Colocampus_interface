@@ -29,6 +29,7 @@ import type {
   Universite,
   PropertyCollection,
   CollectionDraft,
+  BoostPack,
 } from '../types'
 import { getStoredSession, recordUserActivity } from './session'
 
@@ -641,6 +642,18 @@ export async function updateAnnouncementStatus(token: string, annonceId: number,
     method: 'PATCH',
     headers: withAuthHeaders(token, { 'Content-Type': 'application/json' }),
     body: JSON.stringify({ statut_disponibilite: statut }),
+  })
+}
+
+export async function fetchBoostPacks() {
+  return requestJson<{ data: BoostPack[] }>('/boost-packs')
+}
+
+export async function boostAnnouncement(token: string, annonceId: number, packType: string, transactionId: string, methode = 'kkiapay') {
+  return requestJson<{ success: boolean; message: string; data: Annonce }>(`/annonces/${annonceId}/boost`, {
+    method: 'POST',
+    headers: withAuthHeaders(token, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ pack_type: packType, transaction_id: transactionId, methode }),
   })
 }
 

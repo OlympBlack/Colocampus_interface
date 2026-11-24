@@ -17,6 +17,7 @@ interface DashboardDemarcheurProps {
     activeTab: string;
     onAnnouncementEdit: (annonce: Annonce) => void;
     onAnnouncementDelete: (annonce: Annonce) => void;
+    onAnnouncementBoost?: (annonce: Annonce) => void;
     onToast: (toast: any) => void;
     onRefreshData: () => void;
     onAnnouncementStatusChange: (id: number, status: string) => void;
@@ -29,6 +30,7 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
     activeTab,
     onAnnouncementEdit,
     onAnnouncementDelete,
+    onAnnouncementBoost,
     onToast,
     onRefreshData,
     onAnnouncementStatusChange,
@@ -77,6 +79,7 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
                                         onEdit={onAnnouncementEdit}
                                         onDelete={onAnnouncementDelete}
                                         onStatusChange={onAnnouncementStatusChange}
+                                        onBoost={onAnnouncementBoost}
                                     />
                                 </div>
                             </div>
@@ -127,6 +130,7 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
                                 onEdit={onAnnouncementEdit}
                                 onDelete={onAnnouncementDelete}
                                 onStatusChange={onAnnouncementStatusChange}
+                                onBoost={onAnnouncementBoost}
                             />
                         </div>
                     </div>

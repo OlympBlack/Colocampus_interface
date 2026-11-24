@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Zap } from 'lucide-react';
 import type { Annonce } from '../../types';
 import { UiIcon } from '../UiIcons';
 import { formatPrice } from '../../utils/format';
@@ -9,13 +10,15 @@ interface ListeAnnoncesProps {
     onEdit: (annonce: Annonce) => void;
     onDelete: (annonce: Annonce) => void;
     onStatusChange: (id: number, status: string) => void;
+    onBoost?: (annonce: Annonce) => void;
 }
 
 export const ListeAnnonces: React.FC<ListeAnnoncesProps> = ({
     announcements,
     onEdit,
     onDelete,
-    onStatusChange
+    onStatusChange,
+    onBoost,
 }) => {
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
@@ -110,15 +113,22 @@ export const ListeAnnonces: React.FC<ListeAnnoncesProps> = ({
                                             )}
                                         </a>
                                         <div className="min-w-0">
-                                            <a
-                                                href={`#/annonces/${a.id}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="font-semibold text-slate-900 text-xs truncate max-w-[180px] hover:text-blue-600 transition-colors block"
-                                                title={a.titre}
-                                            >
-                                                {a.titre}
-                                            </a>
+                                            <div className="flex items-center gap-1.5">
+                                                <a
+                                                    href={`#/annonces/${a.id}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="font-semibold text-slate-900 text-xs truncate max-w-[180px] hover:text-blue-600 transition-colors block"
+                                                    title={a.titre}
+                                                >
+                                                    {a.titre}
+                                                </a>
+                                                {a.est_boostee && (
+                                                    <span className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-amber-100 text-amber-800" title="Cette annonce est actuellement boostée en tête de liste">
+                                                        ⚡ Recommandée
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-[10px] text-slate-500 truncate">{a.quartier}</p>
                                         </div>
                                     </div>
@@ -151,6 +161,19 @@ export const ListeAnnonces: React.FC<ListeAnnoncesProps> = ({
                                 </td>
                                 <td className="px-4 py-2.5 text-right">
                                     <div className="flex items-center justify-end gap-1">
+                                        {onBoost && (
+                                            <button
+                                                onClick={() => onBoost(a)}
+                                                className={`p-1.5 rounded-md transition-colors ${
+                                                    a.est_boostee
+                                                        ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
+                                                        : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                                }`}
+                                                title={a.est_boostee ? "Boost actif — Prolonger le boost" : "Booster l'annonce (Recommandée au-dessus des autres)"}
+                                            >
+                                                <Zap className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
                                         <a
                                             href={`#/annonces/${a.id}`}
                                             target="_blank"

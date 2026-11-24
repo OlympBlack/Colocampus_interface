@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Trash2, Star, UploadCloud, Video } from 'lucide-react'
 import { compressImages } from '../utils/imageCompressor'
 import { ROOM_TYPE_OPTIONS } from '../constants'
+import { BoostModal } from './BoostModal'
 import {
   API_BASE_URL,
   deleteAnnouncement,
@@ -2055,6 +2056,7 @@ function DashboardLayout({
   onAnnouncementEdit,
   onAnnouncementDelete,
   onAnnouncementStatusChange,
+  onAnnouncementBoost,
   onSessionChange,
   onToast,
   onOpenPublish,
@@ -2076,6 +2078,7 @@ function DashboardLayout({
   onAnnouncementEdit: (annonce: Annonce) => void
   onAnnouncementDelete: (annonce: Annonce) => void
   onAnnouncementStatusChange: (id: number, status: string) => void
+  onAnnouncementBoost?: (annonce: Annonce) => void
   onSessionChange: (session: AuthSession) => void
   onToast: (toast: ToastDraft) => void
   onOpenPublish: () => void
@@ -2143,6 +2146,7 @@ function DashboardLayout({
           activeTab={activeTab}
           onAnnouncementEdit={onAnnouncementEdit}
           onAnnouncementDelete={onAnnouncementDelete}
+          onAnnouncementBoost={onAnnouncementBoost}
           onToast={onToast}
           onRefreshData={onRefreshData}
           onAnnouncementStatusChange={onAnnouncementStatusChange}
@@ -2171,6 +2175,7 @@ function DashboardLayout({
         activeTab={activeTab}
         onAnnouncementEdit={onAnnouncementEdit}
         onAnnouncementDelete={onAnnouncementDelete}
+        onAnnouncementBoost={onAnnouncementBoost}
         onAnnouncementStatusChange={onAnnouncementStatusChange}
         onToast={onToast}
         onRefreshData={onRefreshData}
@@ -2371,6 +2376,7 @@ export function DashboardWorkspace({
   const [isUpdating, setIsUpdating] = useState(false)
   const [announcementToDelete, setAnnouncementToDelete] = useState<Annonce | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [boostingAnnouncement, setBoostingAnnouncement] = useState<Annonce | null>(null)
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -2460,6 +2466,7 @@ export function DashboardWorkspace({
         onMarkNotificationAsRead={(notification) => void markAsRead(notification.id)}
         onAnnouncementEdit={openEdit}
         onAnnouncementDelete={(annonce) => setAnnouncementToDelete(annonce)}
+        onAnnouncementBoost={(annonce) => setBoostingAnnouncement(annonce)}
         onAnnouncementStatusChange={handleStatusChange}
         onSessionChange={onSessionChange}
         onToast={onToast}
@@ -2551,6 +2558,17 @@ export function DashboardWorkspace({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modal de Boostage ── */}
+      {boostingAnnouncement && (
+        <BoostModal
+          annonce={boostingAnnouncement}
+          session={session}
+          onClose={() => setBoostingAnnouncement(null)}
+          onSuccess={() => void refreshData()}
+          onToast={onToast}
+        />
       )}
     </>
   )

@@ -28,8 +28,32 @@ export function AnnonceCard({ annonce, className = '' }: AnnonceCardProps) {
     : formatAnnouncementType(annonce.type_annonce)
 
   return (
-    <div className={`service-item ${className}`.trim()}>
-      <a href={`#/annonces/${annonce.id}`} className="service-item-img-link" title={annonce.titre}>
+    <div className={`service-item ${annonce.est_boostee ? 'service-item--boosted' : ''} ${className}`.trim()} style={annonce.est_boostee ? { border: '2px solid #a4c639', borderRadius: '12px' } : undefined}>
+      <a href={`#/annonces/${annonce.id}`} className="service-item-img-link" title={annonce.titre} style={{ position: 'relative', display: 'block' }}>
+        {annonce.est_boostee && (
+          <span
+            style={{
+              position: 'absolute',
+              top: '10px',
+              left: '10px',
+              zIndex: 3,
+              backgroundColor: '#a4c639',
+              color: '#fff',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '3px 8px',
+              borderRadius: '6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.3px',
+            }}
+          >
+            ⭐ Recommandée
+          </span>
+        )}
         <img src={imageUrl} alt={annonce.titre} loading="lazy" />
       </a>
       <div className="down-content">

@@ -57,6 +57,8 @@ export interface Annonce {
   statut_disponibilite: 'available' | 'taken' | 'pending'
   statut_publication?: 'active' | 'en_attente' | 'refusee' | 'expiree'
   vues_count?: number
+  est_boostee?: boolean
+  boostee_jusqu_a?: string | null
   created_at: string | null
   updated_at?: string | null
   contact_disponible?: boolean
@@ -64,6 +66,15 @@ export interface Annonce {
   est_favori?: boolean
   user: AnnonceUser
   medias: AnnonceMedia[]
+}
+
+export interface BoostPack {
+  id: 'boost_3j' | 'boost_7j' | string
+  titre: string
+  description: string
+  prix: number
+  duree_jours: number
+  badge: string
 }
 
 export interface KycDocument {

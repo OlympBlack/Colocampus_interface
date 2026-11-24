@@ -51,6 +51,24 @@ export function BinomeCard({ annonce, className = '' }: BinomeCardProps) {
             <Users size={12} className="text-[#6f8d21]" />
             <span>Recherche de binôme</span>
           </span>
+          {annonce.est_boostee && (
+            <span
+              style={{
+                backgroundColor: '#a4c639',
+                color: '#fff',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: '6px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px',
+              }}
+              title="Annonce recommandée"
+            >
+              ⭐ Recommandé
+            </span>
+          )}
           {isVerified && (
             <span className="binome-verified-tag" title="Profil étudiant vérifié">
               <CheckCircle2 size={12} className="text-emerald-600" />
