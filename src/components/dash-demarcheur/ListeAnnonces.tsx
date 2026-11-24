@@ -160,18 +160,20 @@ export const ListeAnnonces: React.FC<ListeAnnoncesProps> = ({
                                     {formatPrice(a.loyer)}
                                 </td>
                                 <td className="px-4 py-2.5 text-right">
-                                    <div className="flex items-center justify-end gap-1">
+                                    <div className="flex items-center justify-end gap-2">
                                         {onBoost && (
                                             <button
+                                                type="button"
                                                 onClick={() => onBoost(a)}
-                                                className={`p-1.5 rounded-md transition-colors ${
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs active:scale-95 ${
                                                     a.est_boostee
-                                                        ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
-                                                        : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                                        ? 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200'
+                                                        : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
                                                 }`}
-                                                title={a.est_boostee ? "Boost actif — Prolonger le boost" : "Booster l'annonce (Recommandée au-dessus des autres)"}
+                                                title={a.est_boostee ? "Boost actif — Cliquer pour prolonger" : "Booster cette annonce (200F / 3j ou 500F / 7j)"}
                                             >
-                                                <Zap className="w-3.5 h-3.5" />
+                                                <Zap className={`w-3.5 h-3.5 ${a.est_boostee ? 'fill-amber-600 text-amber-600' : 'fill-white text-white'}`} />
+                                                <span>{a.est_boostee ? 'Boostée' : 'Booster'}</span>
                                             </button>
                                         )}
                                         <a
@@ -184,6 +186,7 @@ export const ListeAnnonces: React.FC<ListeAnnoncesProps> = ({
                                             <UiIcon name="external-link" className="w-3.5 h-3.5" />
                                         </a>
                                         <button
+                                            type="button"
                                             onClick={() => onEdit(a)}
                                             className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
                                             title="Modifier"
@@ -191,6 +194,7 @@ export const ListeAnnonces: React.FC<ListeAnnoncesProps> = ({
                                             <UiIcon name="edit" className="w-3.5 h-3.5" />
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => onDelete(a)}
                                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
                                             title="Supprimer"
