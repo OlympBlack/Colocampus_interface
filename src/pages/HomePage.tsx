@@ -4,17 +4,13 @@ import { HomeHero } from '../components/HomeHero'
 import { CategorizedAnnoncesSection } from '../components/CategorizedAnnoncesSection'
 import { CitiesSection } from '../components/CitiesSection'
 import { CollectionsSection } from '../components/CollectionsSection'
-import { RoomTypeFilterCarousel } from '../components/RoomTypeFilterCarousel'
 import { PartnerAds } from '../components/PartnerAds'
 import { FaqSection } from '../components/FaqSection'
 import { AvisSection } from '../components/AvisSection'
-import { useAnnouncements } from '../hooks/useAnnouncements'
 import { usePublicitesBoutiques } from '../hooks/usePublicitesBoutiques'
 import {
   destroyHeroSlider,
   initHeroSlider,
-  destroyTestimonialsCarousel,
-  initTestimonialsCarousel,
 } from '../carousel'
 
 interface HomePageProps {
@@ -22,37 +18,6 @@ interface HomePageProps {
   onChangeFilters: (filters: ExplorerFilters) => void
   onOpenFilters: () => void
 }
-
-const DEMO_TESTIMONIALS = [
-  {
-    name: 'Grâce Ahouandjinou',
-    role: 'Étudiante en L2 – IFRI',
-    quote:
-      "« Grâce à ColoCampus, j'ai trouvé une chambre à Zogbadjè, près de l'UAC, en trois jours, sans jamais avancer le moindre franc à un inconnu. Les profils vérifiés, ça change tout. »",
-    avatar: '/assets/images/about-1-570x350.jpg',
-  },
-  {
-    name: 'Rachidath Sossou',
-    role: 'Étudiante en M1 – UNA (Porto-Novo)',
-    quote:
-      "« En tant que nouvelle sur le campus, la section des places en colocation m'a permis de rejoindre une étudiante déjà installée à Ouando. On partage le loyer et les frais, c'est parfait pour mon budget. »",
-    avatar: '/assets/images/blog/blog_campus_etudiants.jpg',
-  },
-  {
-    name: 'Emmanuel Kokou',
-    role: 'Étudiant en L3 – UNSTIM (Abomey)',
-    quote:
-      "« Nous cherchions un binôme pour louer un 2 pièces salon à Abomey. En deux clics, nous avons contacté un autre étudiant et signé le bail ensemble. »",
-    avatar: '/assets/images/blog/blog_colocation_etudiants.jpg',
-  },
-  {
-    name: 'Prince Adjovi',
-    role: 'Démarcheur partenaire – Parakou',
-    quote:
-      "« Je publie mes chambres disponibles sur ColoCampus et je reçois directement des étudiants sérieux. Fini les allers-retours inutiles : les contacts arrivent déjà informés. »",
-    avatar: '/assets/images/blog/blog_publier_annonce.jpg',
-  },
-]
 
 const BLOG_TEASER_POSTS = [
   {
@@ -113,19 +78,12 @@ const HOW_IT_WORKS_STEPS = [
 
 export function HomePage({ filters, onChangeFilters, onOpenFilters }: HomePageProps) {
   const heroSliderRef = useRef<HTMLDivElement>(null)
-  const testimonialsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     initHeroSlider(heroSliderRef.current)
     return () => destroyHeroSlider(heroSliderRef.current)
   }, [])
 
-  useEffect(() => {
-    initTestimonialsCarousel(testimonialsRef.current)
-    return () => destroyTestimonialsCarousel(testimonialsRef.current)
-  }, [])
-
-  const { announcements } = useAnnouncements()
   const { publicites } = usePublicitesBoutiques(filters.quartier || undefined)
 
   return (
@@ -280,9 +238,6 @@ export function HomePage({ filters, onChangeFilters, onOpenFilters }: HomePagePr
         </div>
       </div>
 
-      {/* ═══════════ 7. TYPES DE CHAMBRES (carrousel filtrant) ═══════════ */}
-      <RoomTypeFilterCarousel filters={filters} onChangeFilters={onChangeFilters} annonces={announcements} />
-
       {/* ═══════════ 8. PARTENAIRES (publicités boutiques réelles) ═══════════ */}
       <div className="mt-6 md:mt-10 relative z-10">
         <div className="container">
@@ -292,37 +247,6 @@ export function HomePage({ filters, onChangeFilters, onOpenFilters }: HomePagePr
 
       {/* ═══════════ 9. FAQ ═══════════ */}
       <FaqSection />
-
-      {/* ═══════════ 10. TÉMOIGNAGES (Owl Carousel) ═══════════ */}
-      <div className="testimonials">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-12">
-              <div className="section-heading">
-                <h2>
-                  Ils vivent la colocation <em>avec ColoCampus</em>
-                </h2>
-                <span>Ce que disent les étudiants des campus du Bénin</span>
-                <p className="mt-2 mb-0 text-xs italic opacity-70">Témoignages de démonstration</p>
-              </div>
-            </div>
-            <div className="col-md-12">
-              <div className="owl-testimonials owl-carousel" ref={testimonialsRef}>
-                {DEMO_TESTIMONIALS.map((testimonial) => (
-                  <div className="testimonial-item" key={testimonial.name}>
-                    <div className="inner-content">
-                      <h4>{testimonial.name}</h4>
-                      <span>{testimonial.role}</span>
-                      <p>{testimonial.quote}</p>
-                    </div>
-                    <img src={testimonial.avatar} alt="" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* ═══════════ 11. APERÇU BLOG ═══════════ */}
       <div className="more-info" style={{ marginTop: '80px', marginBottom: '80px' }}>
