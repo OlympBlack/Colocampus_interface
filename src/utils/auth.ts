@@ -30,6 +30,12 @@ export function hasKycRedirectQuery(): boolean {
   return params.get('focus') === 'documents' || params.get('from') === 'kyc_required'
 }
 
+export function getKycDocumentLabel(role?: UserRole | string | null): string {
+  if (role === 'demarcheur') return 'votre document IFU'
+  if (role === 'boutique') return 'vos documents RCCM et IFU'
+  return "votre carte d'étudiant ou CIP"
+}
+
 export function getRoleLabel(role: UserRole) {
   if (role === 'admin') return 'Administrateur'
   if (role === 'demarcheur') return 'Démarcheur'

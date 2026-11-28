@@ -24,7 +24,7 @@ import type { ToastDraft } from '../components/ToastViewport'
 import { UiIcon } from '../components/UiIcons'
 import { ReportModal } from '../components/ReportModal'
 import { AuthorProfileModal } from '../components/AuthorProfileModal'
-import { getKycVerificationUrl } from '../utils/auth'
+import { getKycDocumentLabel, getKycVerificationUrl } from '../utils/auth'
 
 
 /* ─────────────────────────────────────────────
@@ -905,7 +905,7 @@ export function AnnonceDetailPage({
                     <p style={{ margin: '6px 0 10px', fontSize: 12, color: '#92400E', lineHeight: 1.45 }}>
                       {session?.user.statut_verification === 'en_attente' || session?.user.statut_verification === 'pending_validation'
                         ? 'Vos pièces d’identité sont actuellement en cours de validation par notre modération. Dès confirmation, vous pourrez échanger avec cet annonceur.'
-                        : 'Pour votre sécurité et celle des bailleurs, vous devez certifier votre compte avec votre carte d’étudiant ou CIP avant de pouvoir envoyer un message.'}
+                        : `Pour votre sécurité et celle des bailleurs, vous devez certifier votre compte avec ${getKycDocumentLabel(session?.user.role)} avant de pouvoir envoyer un message.`}
                     </p>
                     <a
                       href={getKycVerificationUrl(session?.user.role)}
@@ -928,7 +928,7 @@ export function AnnonceDetailPage({
                       <UiIcon name="upload" />
                       {session?.user.statut_verification === 'en_attente' || session?.user.statut_verification === 'pending_validation'
                         ? 'Vérifier l’état de mes pièces'
-                        : 'Déposer ma carte d’étudiant / CIP'}
+                        : 'Déposer mes documents'}
                     </a>
                   </div>
                 )}
@@ -1273,7 +1273,7 @@ export function AnnonceDetailPage({
                   <span>Comment certifier mon compte ?</span>
                 </div>
                 <p style={{ margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 1.55 }}>
-                  Il vous suffit de déposer votre <strong>carte d'étudiant</strong> ou votre <strong>CIP</strong>. Le bouton ci-dessous vous amène directement au formulaire de dépôt de documents.
+                  Il vous suffit de déposer <strong>{getKycDocumentLabel(session?.user.role)}</strong>. Le bouton ci-dessous vous amène directement au formulaire de dépôt de documents.
                 </p>
               </div>
 

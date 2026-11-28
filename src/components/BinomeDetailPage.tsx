@@ -17,7 +17,7 @@ import {
 import type { Annonce, AuthSession } from '../types'
 import { addFavorite, removeFavorite, fetchAnnouncementConversation } from '../services/api'
 import { formatPrice, formatRoomType } from '../utils/format'
-import { getKycVerificationUrl } from '../utils/auth'
+import { getKycDocumentLabel, getKycVerificationUrl } from '../utils/auth'
 import { SimilarAnnouncements } from './SimilarAnnouncements'
 import { ReportModal } from './ReportModal'
 import type { ToastDraft } from './ToastViewport'
@@ -305,7 +305,7 @@ export function BinomeDetailPage({
                     <p className="text-xs text-amber-800 leading-relaxed mb-3">
                       {session?.user.statut_verification === 'en_attente' || session?.user.statut_verification === 'pending_validation'
                         ? 'Vos pièces sont en cours de vérification par notre équipe. Dès validation, vous pourrez échanger avec ce binôme.'
-                        : 'Pour votre sécurité et celle des colocataires, vous devez certifier votre statut d’étudiant avec votre carte ou CIP.'}
+                        : `Pour votre sécurité et celle des colocataires, vous devez certifier votre compte avec ${getKycDocumentLabel(session?.user.role)}.`}
                     </p>
                     <a
                       href={getKycVerificationUrl(session?.user.role)}
@@ -315,7 +315,7 @@ export function BinomeDetailPage({
                       <span>
                         {session?.user.statut_verification === 'en_attente' || session?.user.statut_verification === 'pending_validation'
                           ? 'Vérifier mon statut'
-                          : 'Déposer ma carte d\'étudiant / CIP'}
+                          : 'Déposer mes documents'}
                       </span>
                     </a>
                   </div>
@@ -436,7 +436,7 @@ export function BinomeDetailPage({
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed">
                 <strong className="block font-semibold text-slate-900 mb-1">Pièces acceptées :</strong>
-                Déposez simplement votre <strong>carte d'étudiant</strong> ou votre <strong>CIP</strong>. Le bouton ci-dessous vous redirige directement vers l'espace de dépôt de documents.
+                Déposez simplement <strong>{getKycDocumentLabel(session?.user.role)}</strong>. Le bouton ci-dessous vous redirige directement vers l'espace de dépôt de documents.
               </div>
 
               <div className="flex gap-2.5 pt-2">

@@ -8,6 +8,7 @@ import { UiIcon } from '../UiIcons';
 import { VerificationMini, ProfileTab } from '../Dashboard';
 import { DashboardPageHeader, RefreshButton } from '../dash-shared/DashboardPageHeader';
 import { EmptyState } from '../dash-shared/EmptyState';
+import { getKycVerificationUrl } from '../../utils/auth';
 
 interface DashboardBoutiqueProps {
     session: AuthSession;
@@ -286,8 +287,28 @@ export const DashboardBoutique: React.FC<DashboardBoutiqueProps> = ({
         case 'kyc':
         case 'verification':
             return (
-                <div className="max-w-2xl animate-in fade-in duration-300">
+                <div className="max-w-2xl space-y-5 animate-in fade-in duration-300">
                     <VerificationMini verification={dashboard?.verification ?? {}} />
+                    {session.user.statut_verification !== 'valide' && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-xs">
+                            <div className="flex items-center gap-2.5 text-amber-900 font-bold text-sm">
+                                <UiIcon name="shield" className="w-5 h-5 text-amber-600" />
+                                <span>Certification de votre boutique</span>
+                            </div>
+                            <p className="mt-2 text-xs leading-relaxed text-amber-800">
+                                Déposez vos documents professionnels (RCCM et IFU) pour valider votre compte boutique et débloquer la publication de campagnes et les contacts directs.
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-3">
+                                <a
+                                    href={getKycVerificationUrl(session.user.role)}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700"
+                                >
+                                    <UiIcon name="upload" className="w-4 h-4" />
+                                    Déposer mes documents (RCCM / IFU)
+                                </a>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
 
