@@ -191,15 +191,39 @@ function HeaderUserProfile({
               <div className="dropdown-user-email" title={user.email}>
                 {user.email}
               </div>
-              <span
-                className={`dropdown-badge-pill ${
-                  user.is_verified
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {user.is_verified ? '✓ Vérifié' : 'Compte actif'} • {roleLabel}
-              </span>
+              {(() => {
+                const isKycVerified =
+                  user.role === 'admin' ||
+                  user.statut_verification === 'valide' ||
+                  (user.statut_verification as string) === 'verifie' ||
+                  Boolean(user.documents_identite?.some((d) => d.statut_verification === 'valide'))
+                const isPending =
+                  user.statut_verification === 'en_attente' ||
+                  user.statut_verification === 'pending_validation'
+                const isRejected = user.statut_verification === 'rejete'
+
+                const badgeClass = isKycVerified
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : isPending
+                    ? 'bg-amber-100 text-amber-800'
+                    : isRejected
+                      ? 'bg-rose-100 text-rose-800'
+                      : 'bg-slate-100 text-slate-700'
+
+                const badgeText = isKycVerified
+                  ? '✓ Vérifié'
+                  : isPending
+                    ? '⏳ En attente'
+                    : isRejected
+                      ? '✕ Rejeté'
+                      : 'Non vérifié'
+
+                return (
+                  <span className={`dropdown-badge-pill ${badgeClass}`}>
+                    {badgeText} • {roleLabel}
+                  </span>
+                )
+              })()}
             </div>
           </div>
 

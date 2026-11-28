@@ -2253,19 +2253,21 @@ export function DashboardWorkspace({
 
       // Synchroniser la session locale avec les statuts frais de vérification et profil
       if (res.data?.user) {
-        const isVerified = Boolean(
-          res.data.user.is_verified ||
-          res.data.user.is_valide ||
+        const isKycVerified = Boolean(
+          res.data.user.role === 'admin' ||
           res.data.user.statut_verification === 'valide' ||
-          res.data.profile_progress?.completed ||
-          (res.data.profile_progress?.percentage ?? 0) >= 100 ||
-          res.data.user.role === 'admin'
+          (res.data.user.statut_verification as string) === 'verifie' ||
+          res.data.user.documents_identite?.some((d) => d.statut_verification === 'valide')
         )
         const updatedUser = {
           ...session.user,
           ...res.data.user,
-          is_verified: isVerified,
-          profile_completed: isVerified || Boolean(res.data.profile_progress?.completed),
+          is_verified: isKycVerified,
+          profile_completed: Boolean(
+            isKycVerified ||
+            res.data.profile_progress?.completed ||
+            (res.data.profile_progress?.percentage ?? 0) >= 100
+          ),
           profile_completion_percentage: res.data.profile_progress?.percentage,
         }
         onSessionChange({ ...session, user: updatedUser })
