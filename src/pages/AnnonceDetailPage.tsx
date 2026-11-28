@@ -24,6 +24,7 @@ import type { ToastDraft } from '../components/ToastViewport'
 import { UiIcon } from '../components/UiIcons'
 import { ReportModal } from '../components/ReportModal'
 import { AuthorProfileModal } from '../components/AuthorProfileModal'
+import { getKycVerificationUrl } from '../utils/auth'
 
 
 /* ─────────────────────────────────────────────
@@ -907,7 +908,7 @@ export function AnnonceDetailPage({
                         : 'Pour votre sécurité et celle des bailleurs, vous devez certifier votre compte avec votre carte d’étudiant ou CIP avant de pouvoir envoyer un message.'}
                     </p>
                     <a
-                      href="#/dashboard?tab=preferences"
+                      href={getKycVerificationUrl(session?.user.role)}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -1272,13 +1273,13 @@ export function AnnonceDetailPage({
                   <span>Comment certifier mon compte ?</span>
                 </div>
                 <p style={{ margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 1.55 }}>
-                  Il vous suffit de déposer votre <strong>carte d'étudiant</strong> ou votre <strong>CIP</strong> depuis votre profil. La modération traite les demandes rapidement pour vous donner un accès direct et illimité.
+                  Il vous suffit de déposer votre <strong>carte d'étudiant</strong> ou votre <strong>CIP</strong>. Le bouton ci-dessous vous amène directement au formulaire de dépôt de documents.
                 </p>
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
                 <a
-                  href="#/dashboard?tab=preferences"
+                  href={getKycVerificationUrl(session?.user.role)}
                   onClick={() => setIsKycPromptOpen(false)}
                   style={{
                     ...S.btnPrimary,

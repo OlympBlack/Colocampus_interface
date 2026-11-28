@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Building2, ShieldCheck, Mail, Phone, MapPin, Camera, Check, AlertCircle, Loader2, Lock } from 'lucide-react';
 import type { AuthSession, UpdateProfilePayload, KycDocumentDraft } from '../../types';
 import { updateCurrentUser, uploadKycDocuments } from '../../services/api';
+import { hasKycRedirectQuery } from '../../utils/auth';
 
 interface ProfileDemarcheurProps {
     session: AuthSession;
@@ -27,6 +28,16 @@ export const ProfileDemarcheur: React.FC<ProfileDemarcheurProps> = ({ session, o
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
     // KYC State
+    const isKycRedirect = hasKycRedirectQuery();
+
+    useEffect(() => {
+        if (!isKycRedirect) return;
+        const timer = window.setTimeout(() => {
+            document.getElementById('kyc-documents-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+        return () => window.clearTimeout(timer);
+    }, [isKycRedirect]);
+
     const [kycRows, setKycRows] = useState<KycDocumentDraft[]>([
         { type_piece: 'IFU', numero_piece: '', fichier: null as any }
     ]);
@@ -282,13 +293,31 @@ export const ProfileDemarcheur: React.FC<ProfileDemarcheurProps> = ({ session, o
                 {/* Right Column: Verification & Security */}
                 <div className="space-y-6">
                     {/* Documents KYC */}
-                    <div className={sectionClasses}>
+                    <div
+                        id="kyc-documents-section"
+                        className={`${sectionClasses} ${isKycRedirect ? 'border-amber-400 ring-2 ring-amber-300/60' : ''}`}
+                    >
                         <div className="flex items-center gap-2.5 mb-1">
                             <div className="w-7 h-7 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center">
                                 <ShieldCheck size={16} />
                             </div>
                             <h3 className="text-base font-bold text-slate-900">Vérification</h3>
                         </div>
+
+                        {isKycRedirect && session.user.statut_verification !== 'valide' && (
+                            <div
+                                role="alert"
+                                className="mb-3 p-3.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-950 flex items-start gap-2.5"
+                            >
+                                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                                <div className="text-xs leading-relaxed">
+                                    <p className="font-bold">Certification requise pour publier ou contacter</p>
+                                    <p className="mt-0.5 text-amber-900">
+                                        Renseignez votre numéro IFU et importez une photo ou un scan lisible ci-dessous, puis cliquez sur « Envoyer le document ». Notre équipe validera votre compte rapidement.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         {session.user.statut_verification === 'valide' ? (
                             <div className="p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-lg flex items-start gap-3">

@@ -17,6 +17,7 @@ import {
 import type { Annonce, AuthSession } from '../types'
 import { addFavorite, removeFavorite, fetchAnnouncementConversation } from '../services/api'
 import { formatPrice, formatRoomType } from '../utils/format'
+import { getKycVerificationUrl } from '../utils/auth'
 import { SimilarAnnouncements } from './SimilarAnnouncements'
 import { ReportModal } from './ReportModal'
 import type { ToastDraft } from './ToastViewport'
@@ -307,7 +308,7 @@ export function BinomeDetailPage({
                         : 'Pour votre sécurité et celle des colocataires, vous devez certifier votre statut d’étudiant avec votre carte ou CIP.'}
                     </p>
                     <a
-                      href="#/dashboard?tab=preferences"
+                      href={getKycVerificationUrl(session?.user.role)}
                       className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition"
                     >
                       <Upload className="w-3.5 h-3.5" />
@@ -435,12 +436,12 @@ export function BinomeDetailPage({
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed">
                 <strong className="block font-semibold text-slate-900 mb-1">Pièces acceptées :</strong>
-                Déposez simplement votre <strong>carte d'étudiant</strong> ou votre <strong>CIP</strong> depuis votre espace profil. Notre modération valide les pièces rapidement.
+                Déposez simplement votre <strong>carte d'étudiant</strong> ou votre <strong>CIP</strong>. Le bouton ci-dessous vous redirige directement vers l'espace de dépôt de documents.
               </div>
 
               <div className="flex gap-2.5 pt-2">
                 <a
-                  href="#/dashboard?tab=preferences"
+                  href={getKycVerificationUrl(session?.user.role)}
                   onClick={() => setIsKycPromptOpen(false)}
                   className="flex-1 py-2.5 px-4 text-center rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition flex items-center justify-center gap-2"
                 >

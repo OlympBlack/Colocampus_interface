@@ -4,6 +4,7 @@ import { UiIcon } from '../UiIcons';
 import { DashboardPageHeader, RefreshButton } from '../dash-shared/DashboardPageHeader';
 import { EmptyState } from '../dash-shared/EmptyState';
 import { formatPrice, formatRoomType, getPrimaryImage } from '../../utils/format';
+import { getKycVerificationUrl } from '../../utils/auth';
 
 // Placeholder pour les composants réutilisés (qui seront importés ou migrés)
 // En réalité, nous allons importer ceux existants si possible, ou les recréer avec Tailwind
@@ -350,7 +351,7 @@ export const DashboardStudent: React.FC<DashboardStudentProps> = ({
                             </p>
                             <div className="mt-4 flex flex-wrap gap-3">
                                 <a
-                                    href="#/dashboard/etudiant?tab=preferences"
+                                    href={getKycVerificationUrl(session.user.role)}
                                     className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700"
                                 >
                                     <UiIcon name="upload" className="w-4 h-4" />

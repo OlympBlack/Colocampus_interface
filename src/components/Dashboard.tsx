@@ -21,7 +21,7 @@ import { DashboardAdmin } from './dash-admin/DashboardAdmin'
 import { DashboardBoutique } from './dash-boutique/DashboardBoutique'
 import { DashboardDemarcheur } from './dash-demarcheur/DashboardDemarcheur'
 import { DashboardStudent } from './dash-student/DashboardStudent'
-import { getDashboardPath } from '../utils/auth'
+import { getDashboardPath, hasKycRedirectQuery } from '../utils/auth'
 import type { ToastDraft } from './ToastViewport'
 import type {
   Annonce,
@@ -1011,6 +1011,15 @@ export function ProfileTab({
   const [kycSubmitting, setKycSubmitting] = useState(false)
   const [kycError, setKycError] = useState<string | null>(null)
   const [kycSuccess, setKycSuccess] = useState(false)
+  const isKycRedirect = hasKycRedirectQuery()
+
+  useEffect(() => {
+    if (!isKycRedirect) return
+    const timer = window.setTimeout(() => {
+      document.getElementById('kyc-documents-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 120)
+    return () => window.clearTimeout(timer)
+  }, [isKycRedirect])
 
   const field = (name: keyof ProfileFormState, value: ProfileFormState[keyof ProfileFormState]) => {
     setForm((f) => ({ ...f, [name]: value }))
@@ -1279,14 +1288,33 @@ export function ProfileTab({
 
       {role !== 'admin' && session.user.statut_verification !== 'valide' ? (
         <form
+          id="kyc-documents-section"
           onSubmit={handleKycSubmit}
-          className="flex flex-col gap-4 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 shadow-xs sm:p-6"
+          className={`flex flex-col gap-4 rounded-2xl border p-5 shadow-xs sm:p-6 ${
+            isKycRedirect ? 'border-amber-400 bg-amber-50/70 ring-2 ring-amber-300/60' : 'border-blue-200 bg-blue-50/70'
+          }`}
         >
+          {isKycRedirect && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-100/90 px-4 py-3 text-amber-950"
+            >
+              <UiIcon name="shield" className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+              <div className="text-xs leading-relaxed">
+                <p className="font-bold text-amber-950">Certification requise pour continuer</p>
+                <p className="mt-0.5 text-amber-900">
+                  {role === 'boutique'
+                    ? 'Complétez les champs ci-dessous (type de document, numéro RCCM/IFU et photo ou scan lisible), puis cliquez sur « Soumettre mes documents ». Votre compte sera vérifié rapidement par notre équipe.'
+                    : 'Sélectionnez votre type de pièce (Carte d’étudiant ou CIP), saisissez son numéro, importez une photo ou un scan lisible puis cliquez sur « Soumettre mes documents ». Dès validation par notre modération, vous pourrez contacter les annonceurs et publier.'}
+                </p>
+              </div>
+            </div>
+          )}
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-700/70">Sécurité</p>
             <h2 className="text-base font-bold text-slate-900">Documents d'identité</h2>
             <p className="mt-1 text-xs text-blue-800/80">
-              Soumettez vos documents pour valider votre compte et débloquer la publication.
+              Soumettez vos documents pour valider votre compte et débloquer la publication et la messagerie.
             </p>
           </div>
 

@@ -7,6 +7,29 @@ export function getDashboardPath(role?: UserRole | string | null) {
   return '/dashboard/etudiant'
 }
 
+/**
+ * Returns the hash URL that lands the user directly on the document submission
+ * section of their dashboard, with `focus=documents&from=kyc_required` so the
+ * page auto-scrolls to the upload form and displays a contextual help alert.
+ */
+export function getKycVerificationUrl(role?: UserRole | string | null): string {
+  const base = getDashboardPath(role)
+  return `#${base}?tab=preferences&focus=documents&from=kyc_required`
+}
+
+/**
+ * Checks whether the current hash URL was reached via a KYC redirect
+ * (`focus=documents` or `from=kyc_required`).
+ */
+export function hasKycRedirectQuery(): boolean {
+  if (typeof window === 'undefined') return false
+  const raw = window.location.hash.replace(/^#/, '')
+  const qIndex = raw.indexOf('?')
+  if (qIndex === -1) return false
+  const params = new URLSearchParams(raw.slice(qIndex + 1))
+  return params.get('focus') === 'documents' || params.get('from') === 'kyc_required'
+}
+
 export function getRoleLabel(role: UserRole) {
   if (role === 'admin') return 'Administrateur'
   if (role === 'demarcheur') return 'Démarcheur'

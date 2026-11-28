@@ -10,6 +10,7 @@ import { ForfaitsPage } from '../../pages/ForfaitsPage';
 import { WidgetAbonnement } from './WidgetAbonnement';
 import { UiIcon } from '../UiIcons';
 import { DashboardPageHeader, RefreshButton } from '../dash-shared/DashboardPageHeader';
+import { getKycVerificationUrl } from '../../utils/auth';
 
 interface DashboardDemarcheurProps {
     session: AuthSession;
@@ -209,7 +210,7 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
                             status={session.user.statut_verification}
                             documentsCount={session.user.documents_identite?.length ?? 0}
                             adminComment={session.user.commentaire_admin}
-                            onUploadClick={() => { window.location.hash = '#/dashboard/demarcheur?tab=preferences' }}
+                            onUploadClick={() => { window.location.hash = getKycVerificationUrl(session.user.role) }}
                         />
                     </div>
                 );

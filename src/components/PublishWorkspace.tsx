@@ -32,7 +32,7 @@ import type {
   PubliciteDraft,
   TransactionCredit,
 } from '../types'
-import { getDashboardPath } from '../utils/auth'
+import { getDashboardPath, getKycVerificationUrl } from '../utils/auth'
 import { formatPrice, formatRoomType } from '../utils/format'
 import { PageForfaits, isKkiapayReady, requestKkiapayPayment } from './PageForfaits'
 import { WidgetPortefeuille } from './WidgetPortefeuille'
@@ -742,9 +742,9 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
         )}
 
         <div className="d-flex gap-3 justify-content-center flex-wrap">
-          <a href="#/profile" className="button button--primary">
+          <a href={getKycVerificationUrl(session.user.role)} className="button button--primary">
             <ShieldCheck size={16} />
-            Compléter ma vérification
+            Déposer mes documents d'identité
           </a>
           <button type="button" className="button button--neutral" onClick={handleBack}>
             <ArrowLeft size={16} />
